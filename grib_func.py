@@ -100,16 +100,10 @@ def get_files(date, dic):
     d3 = date.replace(hour=6)
     d4 = date.replace(hour=12)
 
-    if np.logical_and(date.month == 1, date.day == 1):
-        wkfolder = dic['dfolder'] + dic['var'] + '/' + str(date.year - 1) + '/'
-        sd1 = d1.strftime('%Y%m%d%H')
-        f1 = glob.glob(wkfolder + dic['var'] + '_f.01.' + sd1 + '*.grb2')
-    else:
-        wkfolder = dic['dfolder'] + dic['var'] + '/' + str(date.year - 1) + '/'
-        sd1 = d1.strftime('%Y%m%d%H')
-        f1 = glob.glob(wkfolder + dic['var'] + '_f.01.' + sd1 + '*.grb2')
-
-    wkfolder = dic['dfolder'] + dic['var'] + '/' + str(date.year) + '/'
+    wkfolder = dic['dfolder'] + dic['var'] + '/' + str(d1.year) + '/'
+    sd1 = d1.strftime('%Y%m%d%H')
+    f1 = glob.glob(wkfolder + dic['var'] + '_f.01.' + sd1 + '*.grb2')
+    wkfolder = dic['dfolder'] + dic['var'] + '/' + str(d2.year) + '/'
     sd2 = d2.strftime('%Y%m%d%H')
     f2 = glob.glob(wkfolder + dic['var'] + '_f.01.' + sd2 + '*.grb2')
     sd3 = d3.strftime('%Y%m%d%H')
@@ -168,20 +162,33 @@ def get_daily_value(files, fecha, dic):
         valores = []
         for item in files:
             d_file = extract_data_files(item)
-            fecha, ymd = gen_date_range(d_file)
+            vec_date, ymd = gen_date_range(d_file)
             grbs = xr.open_dataset(item, engine='pynio')
-            print(grbs.data_vars)
+            nvar = list(grbs.data_vars.keys())[0]
             xe = np.array(dic['lon_e']) % 360  # Pasamos de [-180, 180] a [0, 360]
             ye = dic['lat_e']
-            if var == 'tmax':
-                data = grbs['TMAX_P0_L103_GGA0'].sel(lon_0=xe, lat_0=ye,
-                                                     method='nearest')
+            if var in ['tmax', 'tmin', 'wnd10m', 'dswsfc']:
+                data = grbs[nvar].sel(lon_0=xe, lat_0=ye, method='nearest')
                 datos = data.values
-                print(datos[0:10])
+                aux = [dt.datetime(a.year, a.month, a.day) for a in vec_date]
+                idate = [a == fecha for a in aux]
+                valores.extend(datos[idate])
+            elif var == 'hr':
+                print('Por programar')
+            elif var == 'precip':
+                print('Por Programar')
+        # End of LOOP
+        if var == 'tmax':
+            valor = np.max(np.array(valores))
+        elif var == 'tmin':
+            valor = np.min(np.array(valores))
+        elif (var == 'wnd10m') or (var == 'dswsfc'):
+            valor = np.mean(np.array(valores))
+        elif var == 'hr':
+            valor = 100.
+        elif var == 'precip':
+            valor = 5.
 
-
-
-        valor = 381.7
 
     return valor
 
@@ -191,7 +198,7 @@ if __name__ == "__main__":
     import os
     # ############################################
     folder = '/datos2/CFSReana/'
-    var    = 'tmax'  
+    var    = 'dswsfc'  
     # Other options: tmax, tmin, dswsfc, pressfc
     #                tmp2m, wnd10m
     # Datos de fechas, estaciones y lugar para salidas
@@ -211,7 +218,7 @@ if __name__ == "__main__":
     f.write('----------------------------------------------\n')
     f.write('\n')
     f.write('Archivo log para extraer datos desde GRIB \n')
-    f.write('Este archivo extraer datos de variable: ' + var + '\n')
+    f.write('Se extraen datos de variable: ' + var + '\n')
     f.write('Datos GRIB se encuentran en: ' + folder + '\n')
     f.write('Extraer datos para estacion: ' + n_est[it] + '\n')
     f.write('Salidas se encuentran en: ' + outfolder + '\n')
@@ -228,7 +235,7 @@ if __name__ == "__main__":
     # MAIN CODE 
     # -------------------------------------------------------
     f = open(outfolder + logfile, 'a')
-    fecha = dt.datetime(1999,1,1)
+    fecha = dt.datetime(2001,1,1)
     # --
     f.write('Working at date: ' + fecha.strftime('%Y-%m-%d') + '\n')
     f.close()
