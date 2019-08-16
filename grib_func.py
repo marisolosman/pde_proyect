@@ -169,11 +169,6 @@ def get_files_o(date, dic):
     return lfls
 
 
-def get_ffiles(date, dic):
-    """
-    """
-    
-
 def get_daily_value(files, fecha, dic):
     """
     From the list of files given, it extracts
@@ -204,6 +199,10 @@ def get_daily_value(files, fecha, dic):
             ye = dic['lat_e']
             data = grbs[nvar].sel(lon_0=xe, lat_0=ye, method='nearest')
             datos = data.values
+            # Eliminamos memoria
+            grbs.close()
+            del data
+            # ----------
             aux = [dt.datetime(a.year, a.month, a.day) for a in vec_date]
             idate = [a == fecha for a in aux]
             if var == 'tmax':
@@ -216,6 +215,7 @@ def get_daily_value(files, fecha, dic):
 
 
     return valores
+
 
 def create_summary_file(dic, fval):
     """
@@ -231,18 +231,6 @@ def create_summary_file(dic, fval):
 
     return df
 
-
-def get_daily_value_hr(dfl, fecha, dic):
-    """
-    """
-
-def get_daily_value_wnd(dfl, fecha, dic):
-    """
-    """
-
-def get_daily_value_pp(dfl, fecha, dic):
-    """
-    """
 
 if __name__ == "__main__":
 
@@ -285,15 +273,14 @@ if __name__ == "__main__":
     # -------------------------------------------------------
     # MAIN CODE 
     # -------------------------------------------------------
-    #f = open(outfolder + logfile, 'a')
-    #fecha = dt.datetime(1999,10,6)
-    fval = pd.date_range(start='1999-01-02', end='2010-12-31', freq='D').to_pydatetime().tolist()
+    fval = pd.date_range(start='1999-01-01', end='1999-12-31', freq='D').to_pydatetime().tolist()
     os.makedirs(outfolder + n_est[it], exist_ok=True)
     n_file = outfolder + n_est[it] + '/data_' + var  + '.txt'
     if os.path.isfile(n_file):
         df = pd.read_csv(n_file, sep=';', decimal=',', index_col=0)
     else:
         df = create_summary_file(dic, fval)
+    # Comenzamos a iterar en cada fecha 
     for fecha in fval:
     # --
         f = open(outfolder + logfile, 'a')
@@ -316,35 +303,6 @@ if __name__ == "__main__":
     f.write('######### THE END ##########\n')
     f.write('############################\n')
     f.close()
-    # --
-    #for yr in np.arange(yri,yri+1):
-    #    wrkfol = folder + var + '/' + str(yr) + '/'
-    #    files = glob.glob(wrkfol + var + '*.grb2')
-    #    files.sort(key = lambda x: x.split('.')[2])
-    #    print('Trabajando en la carpeta: ' + wrkfol)
-    #    for item in files[0:5]:
-    #        print(item.split('/')[5])
-    #        d_file = extract_data_files(item)
-    #        fecha, ymd = gen_date_range(d_file)
-    #        grbs = xr.open_dataset(item, engine='pynio')
-    #        lon_e1 = np.array(lon_e) % 360  # Pasamos de [-180, 180] a [0, 360]
-    #        data = grbs['TMAX_P0_L103_GGA0'].sel(lon_0=lon_e1[0],
-    #                                             lat_0=lat_e[0],
-    #                                             method='nearest')
-    #        aux = data.dims[0]
-    #        datos = data.values
-    #        df = pd.DataFrame(index=np.arange(0, len(datos)))
-    #        df = df.assign(fecha=fecha)
-    #        df = df.assign(ymd=ymd)
-    #        df = df.assign(var=datos)
-    #        #dmax = df.groupby(by='ymd').max()
-    #        print(fecha[0:5])
-    #        print(datos[0:10])
-    #        #print(dmax.head(5))
-    #        print('------------------------------')
-    #        #print((data[0:5].values))
-    #        #it1, it2 = get_time_index(data)
-            
 
 
 
