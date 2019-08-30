@@ -78,8 +78,8 @@ def gen_date_range(dfile):
     f1 = pd.date_range(start=strt, end=endt, freq='6H')
     outfecha = f1[1::]
 
-    outymd = np.array(fecha.year*1e4 + fecha.month*1e2 +\
-                   fecha.day, dtype=int)
+    outymd = np.array(outfecha.year*1e4 + outfecha.month*1e2 +\
+                      outfecha.day, dtype=int)
 
     return outfecha, outymd
 
