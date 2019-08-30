@@ -18,7 +18,6 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import glob
-import objgraph
 
 
 def extract_data_files(fname):
@@ -48,11 +47,11 @@ def extract_data_files(fname):
 
     aux = fname.split('/')[5]  # Position of the filename
     filen = aux.split('.')
-    dic = {'var':filen[0], 'ensMem':filen[1], 'ti':filen[2], 'tv':filen[3],\
-           'tic':filen[4]}
+    outd = {'var':filen[0], 'ensMem':filen[1], 'ti':filen[2], 'tv':filen[3],\
+            'tic':filen[4]}
 
 
-    return dic
+    return outd
     
 
 def gen_date_range(dfile):
@@ -77,12 +76,13 @@ def gen_date_range(dfile):
                        0, 0)
 
     f1 = pd.date_range(start=strt, end=endt, freq='6H')
-    fecha = f1[1::]
+    outfecha = f1[1::]
 
-    ymd = np.array(fecha.year*1e4 + fecha.month*1e2 +\
+    outymd = np.array(fecha.year*1e4 + fecha.month*1e2 +\
                    fecha.day, dtype=int)
 
-    return fecha, ymd
+    return outfecha, outymd
+
 
 def get_files_hr(date, dic):
     """
@@ -95,8 +95,6 @@ def get_files_hr(date, dic):
 
     <var>.<ensMem>.<yyyymmddhh t(i)>.<yyyymmddhh t(v)>.<yyyymmdd t(ic)>.grb
     """
-
-#    logfile = open(dic['lfile'], 'a')
     iv = dt.timedelta(days=1)
     d1 = (date - iv).replace(hour=18)
     d2 = date
@@ -111,18 +109,14 @@ def get_files_hr(date, dic):
             sd1 = dx.strftime('%Y%m%d%H')
             f1 = glob.glob(wkfolder + var + '_f.01.' + sd1 + '*.grb2')
             lfls = []
-            if not f1:
-                print('No hay archivo para ' + sd1)
-#                logfile.write('File for ' + sd1 + ' NOT FOUND \n')
-            else:
+            if f1:
                 lfls.append(f1[0])
-#                logfile.write('File: ' + f1[0] + ' ADDED \n')
         # End loop of dates
         outf[var] = lfls
     # End of LOOP
-#    logfile.close()
 
     return outf
+
 
 def get_files_o(date, dic):
     """
@@ -134,18 +128,13 @@ def get_files_o(date, dic):
     with those four values
     """
     lfls = []
-#    logfile = open(dic['lfile'], 'a')
     if date == dt.datetime(1999,1,1):
         d1 = date.replace(hour=0)
         wkfolder = dic['dfolder'] + dic['var'] + '/' + str(d1.year) + '/'
         sd1 = d1.strftime('%Y%m%d%H')
         f1 = glob.glob(wkfolder + dic['var'] + '_f.01.' + sd1 + '*grb2')
-        if not f1:
-            n_file = wkfolder + dic['var'] + '_f.01' + sd1
-#            logfile.write('File ' + sd1 + ' NOT FOUND\n')
-        else:
+        if f1:
             lfls.append(f1[0])
-#            logfile.write('File: ' + f1[0] + ' ADDED \n')
     else:
         # Test all dates from previous day and all hours
         iv = dt.timedelta(days=1)
@@ -158,18 +147,13 @@ def get_files_o(date, dic):
             sd1 = dx.strftime('%Y%m%d%H')
             n_file = wkfolder + dic['var'] + '_f.01.' + sd1
             f1 = glob.glob(n_file + '*.grb2')
-            if not f1:
-                print('No hay archivo para ' + sd1)
-#                logfile.write('File ' + sd1 + ' NOT FOUND \n')
-            else:
+            if f1:
                 lfls.append(f1[0])
-#                logfile.write('File: ' + f1[0] + ' ADDED \n')
-
-#    logfile.close()
-
+    # End IF
     return lfls
 
-def get_daily_value(files, fecha, dic):
+
+def get_daily_value(files, date, dic):
     """
     From the list of files given, it extracts
     one value for the date given
@@ -178,13 +162,8 @@ def get_daily_value(files, fecha, dic):
     - fecha: Date to use as a value
     - dic: Dictionary containing data from var, folders, etc
     """
-#    logfile = open(dic['lfile'], 'a')
     if not files:
-        # If files is empty
-        sd = fecha.strftime('%Y-%m-%d')
-#        logfile.write('There are no files for date: ' + sd + ' \n')
-#        logfile.write('returning NaN for specified date \n')
-#        logfile.close()
+        sd = date.strftime('%Y-%m-%d')
         valores = {dic['var'] + '_00': np.nan, dic['var'] + '_06': np.nan,
                    dic['var'] + '_12': np.nan, dic['var'] + '_18': np.nan}
     else:
@@ -201,21 +180,26 @@ def get_daily_value(files, fecha, dic):
             datos = data.values
             # Eliminamos memoria
             grbs.close()
-            del data
+            grbs = None
+            data = None
             # ----------
             aux = [dt.datetime(a.year, a.month, a.day) for a in vec_date]
-            idate = [a == fecha for a in aux]
-            if var == 'tmax':
+            idate = [a == date for a in aux]
+            if dic['var'] == 'tmax':
                 kval = dic['var'] + '_' + d_file['ti'][8::]
                 for key in valores.keys():
                     if key == kval:
                         valores[ key ] = np.max(np.array(datos[idate]))
-            elif var == 'tmin':
+            elif dic['var'] == 'tmin':
                 valores[ dic['var'] + '_' + d_file['ti'][8::] ] = np.min(np.array(datos[idate]))
             else:
                 valores[ dic['var'] + '_' + d_file['ti'][8::] ] = np.nan
+            # Eliminamos memoria
+            d_file = None
+            vec_date = None
+            ymd = None
+            # -------
         # End of LOOP
-
 
     return valores
 
@@ -230,8 +214,6 @@ def create_summary_file(dic, fval, fmat):
     df = pd.DataFrame(columns=columnas)
     df['fecha'] = fval
     df[columnas[1::]] = fmat
-    #namefile = dic['ofolder'] + 'Summary_data_' + dic['n_est'] + '.txt'
-    #df.to_csv(namefile, sep=';', float_format='%.3f', decimal=',')
 
     return df
 
@@ -260,17 +242,6 @@ if __name__ == "__main__":
     # LogFile
     it = 0
     logfile = 'log_extract_variable_' + var + '_' + n_est[it] + '.log'
-#    f = open(outfolder + logfile, 'w')
-#    f.write('----------------------------------------------\n')
-#    f.write('\n')
-#    f.write('Archivo log para extraer datos desde GRIB \n')
-#    f.write('Se extraen datos de variable: ' + var + '\n')
-#    f.write('Datos GRIB se encuentran en: ' + folder + '\n')
-#    f.write('Extraer datos para estacion: ' + n_est[it] + '\n')
-#    f.write('Salidas se encuentran en: ' + outfolder + '\n')
-#    f.write('----------------------------------------------\n')
-#    f.write('\n')
-#    f.close()
     # Diccionario con datos generales
     dic = {'lfile':outfolder + logfile, 'ofolder':outfolder,
             'dfolder':folder, 'var':var,
@@ -280,18 +251,14 @@ if __name__ == "__main__":
     # -------------------------------------------------------
     # MAIN CODE 
     # -------------------------------------------------------
-    fval = pd.date_range(start='1999-01-01', end='2010-12-31', freq='D').to_pydatetime().tolist()
+    fval = pd.date_range(start='2001-01-01', end='2001-12-31', freq='D').to_pydatetime().tolist()
     fmat = np.empty((len(fval), 4))
     fmat.fill(np.nan)
     print(fmat.shape)
-
     # Comenzamos a iterar en cada fecha
-
     for idx, fecha in enumerate(fval):
-    # --
-#        f = open(outfolder + logfile, 'a')
-#        f.write('Working at date: ' + fecha.strftime('%Y-%m-%d') + '\n')
-#        f.close()
+        if fecha.day == 1:
+            print('Trabajando en la fecha: ' + fecha.strftime('%Y-%m-%d') )
     # --
         if var == 'hr':
             files = get_files_hr(fecha, dic)
@@ -299,30 +266,17 @@ if __name__ == "__main__":
             files = get_files_o(fecha, dic)
             valores = get_daily_value(files, fecha, dic)
             fmat[idx, :] = list(valores.values())
-
-            #print(valores.values())
-            #df.loc[df['fecha'] == fecha, list(valores.keys())] = list(valores.values())
-            #print(df.loc[df['fecha'] == fecha, valores.keys()])
-            #    df.loc[df['fecha'] == fecha, k] = values[k]
-
-
+            files = None
+            valores = None
     # --
     os.makedirs(outfolder + n_est[it], exist_ok=True)
-    n_file = outfolder + n_est[it] + '/data_' + var + '.txt'
+    n_file = outfolder + n_est[it] + '/data_' + var +'_' + str(fval[0].year) + '.txt'
     if os.path.exists(n_file):
         os.remove(n_file)
     df = create_summary_file(dic, fval, fmat)
     sel_col = list(df)[1::]
     df[sel_col] = df[sel_col].apply(pd.to_numeric, errors='ignore')
-    print(df.head())
-    print(df.tail())
     df.to_csv(n_file, sep=';', float_format='%.2f', decimal=',',
               date_format='%Y-%m-%d')
     print("--- %s seconds ---" % (time.time() - start_time))
-#    f = open(outfolder + logfile, 'a')
-#    f.write('######### THE END ##########\n')
-#    f.write('############################\n')
-#    f.close()
-
-
 
