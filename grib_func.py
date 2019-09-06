@@ -84,6 +84,20 @@ def gen_date_range(dfile):
     return outfecha, outymd
 
 
+def gen_date_range_v2(dfile, f_td):
+    """
+    """
+    yri = dfile['ti'][0:4]
+    moi = dfile['ti'][4:6]
+    dai = dfile['ti'][6:8]
+    hri = dfile['ti'][8::]
+    str_d = np.datetime64(yri + '-' + moi + '-' + dai + 'T' + hri + ':00')
+    out_1 = [str_d + td for td in f_td]
+    out_2 = [pd.Timestamp(val).to_pydatetime() for val in out_1]
+
+    return out_2
+
+
 def get_files_hr(date, dic):
     """
     Function to return the list of the files corresponding for
@@ -171,13 +185,24 @@ def get_daily_value(files, date, dic):
                    dic['var'] + '_12': np.nan, dic['var'] + '_18': np.nan}
         for item in files:
             d_file = extract_data_files(item)
-            vec_date, ymd = gen_date_range(d_file)
             grbs = xr.open_dataset(item, engine='pynio')
             nvar = list(grbs.data_vars.keys())[0]
             xe = np.array(dic['lon_e']) % 360  # Pasamos de [-180, 180] a [0, 360]
             ye = dic['lat_e']
             data = grbs[nvar].sel(lon_0=xe, lat_0=ye, method='nearest')
+            vec_date = gen_date_range_v2(d_file, data.coords[data.dims[0]].values)
             datos = data.values
+            if dic['var'] == 'wnd10m':
+                # Solo valido dado que extraemos comp U y V keys=0 o keys=1
+                nvar2 = list(grbs.data_vars.keys())[1]
+                data2 = grbs[nvar2].sel(lon_0=xe, lat_0=ye, method='nearest')
+                vec_date2 = gen_date_range_v2(d_file, data2.coords[data2.dims[0]].values)
+                aux2 = [dt.datetime(a.year, a.month, a.day) for a in vec_date2]
+                idate2 = [a == date for a in aux2]
+                datos2 = data2.values
+                # ------------------
+                nvar2 = None
+                data2 = None
             # Eliminamos memoria
             grbs.close()
             grbs = None
@@ -191,13 +216,23 @@ def get_daily_value(files, date, dic):
                     if key == kval:
                         valores[ key ] = np.max(np.array(datos[idate]))
             elif dic['var'] == 'tmin':
-                valores[ dic['var'] + '_' + d_file['ti'][8::] ] = np.min(np.array(datos[idate]))
+                kval = dic['var'] + '_' + d_file['ti'][8::]
+                for key in valores.keys():
+                    if key == kval:
+                        valores[ key ] = np.min(np.array(datos[idate]))
+            elif dic['var'] == 'wnd10m':
+                kval = dic['var'] + '_' +  d_file['ti'][8::]
+                for key in valores.keys():
+                    if key == kval:
+                        speed = np.sqrt(datos[idate]**2 + datos2[idate2]**2)
+                        valores[ key ] = np.nanmean(speed)
+                        vec_date2 = None
+
             else:
                 valores[ dic['var'] + '_' + d_file['ti'][8::] ] = np.nan
             # Eliminamos memoria
             d_file = None
             vec_date = None
-            ymd = None
             # -------
         # End of LOOP
 
@@ -219,64 +254,5 @@ def create_summary_file(dic, fval, fmat):
 
 
 if __name__ == "__main__":
-
-    import os
-    import time
-
-    start_time = time.time()
-    # ############################################
-    folder = '/datos2/CFSReana/'
-    var    = 'tmax'  
-    # Other options: tmax, tmin, dswsfc,
-    #                hr, wnd10m
-    # Datos de fechas, estaciones y lugar para salidas
-    yri = 1999
-    yrf = 2010  # Entire period cover by database
-
-    lat_e = [-27.45]  # Test con estacion Resistencia (Chaco, SMN)
-    lon_e = [-59.05]
-    n_est = ['resistencia']
-
-    outfolder = '../pde_salidas/'
-    os.makedirs(outfolder, exist_ok=True)
-    # LogFile
-    it = 0
-    logfile = 'log_extract_variable_' + var + '_' + n_est[it] + '.log'
-    # Diccionario con datos generales
-    dic = {'lfile':outfolder + logfile, 'ofolder':outfolder,
-            'dfolder':folder, 'var':var,
-            'lat_e':lat_e[it], 'lon_e':lon_e[it],
-            'n_est':n_est[it]}
-    
-    # -------------------------------------------------------
-    # MAIN CODE 
-    # -------------------------------------------------------
-    fval = pd.date_range(start='2001-01-01', end='2001-12-31', freq='D').to_pydatetime().tolist()
-    fmat = np.empty((len(fval), 4))
-    fmat.fill(np.nan)
-    print(fmat.shape)
-    # Comenzamos a iterar en cada fecha
-    for idx, fecha in enumerate(fval):
-        if fecha.day == 1:
-            print('Trabajando en la fecha: ' + fecha.strftime('%Y-%m-%d') )
-    # --
-        if var == 'hr':
-            files = get_files_hr(fecha, dic)
-        else:
-            files = get_files_o(fecha, dic)
-            valores = get_daily_value(files, fecha, dic)
-            fmat[idx, :] = list(valores.values())
-            files = None
-            valores = None
-    # --
-    os.makedirs(outfolder + n_est[it], exist_ok=True)
-    n_file = outfolder + n_est[it] + '/data_' + var +'_' + str(fval[0].year) + '.txt'
-    if os.path.exists(n_file):
-        os.remove(n_file)
-    df = create_summary_file(dic, fval, fmat)
-    sel_col = list(df)[1::]
-    df[sel_col] = df[sel_col].apply(pd.to_numeric, errors='ignore')
-    df.to_csv(n_file, sep=';', float_format='%.2f', decimal=',',
-              date_format='%Y-%m-%d')
-    print("--- %s seconds ---" % (time.time() - start_time))
+    print('Hola Main')
 
