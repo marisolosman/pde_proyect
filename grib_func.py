@@ -197,8 +197,6 @@ def get_daily_value(files, date, dic):
                 nvar2 = list(grbs.data_vars.keys())[1]
                 data2 = grbs[nvar2].sel(lon_0=xe, lat_0=ye, method='nearest')
                 vec_date2 = gen_date_range_v2(d_file, data2.coords[data2.dims[0]].values)
-                aux2 = [dt.datetime(a.year, a.month, a.day) for a in vec_date2]
-                idate2 = [a == date for a in aux2]
                 datos2 = data2.values
                 # ------------------
                 nvar2 = None
@@ -208,26 +206,50 @@ def get_daily_value(files, date, dic):
             grbs = None
             data = None
             # ----------
-            aux = [dt.datetime(a.year, a.month, a.day) for a in vec_date]
-            idate = [a == date for a in aux]
             if dic['var'] == 'tmax':
+                aux = [dt.datetime(a.year, a.month, a.day) for a in vec_date]
+                idate = [a == date for a in aux]
                 kval = dic['var'] + '_' + d_file['ti'][8::]
                 for key in valores.keys():
                     if key == kval:
                         valores[ key ] = np.max(np.array(datos[idate]))
             elif dic['var'] == 'tmin':
+                aux = [dt.datetime(a.year, a.month, a.day) for a in vec_date]
+                idate = [a == date for a in aux]
                 kval = dic['var'] + '_' + d_file['ti'][8::]
                 for key in valores.keys():
                     if key == kval:
                         valores[ key ] = np.min(np.array(datos[idate]))
             elif dic['var'] == 'wnd10m':
+                aux = [dt.datetime(a.year, a.month, a.day) for a in vec_date]
+                idate = [a == date for a in aux]
+                aux2 = [dt.datetime(a.year, a.month, a.day) for a in vec_date2]
+                idate2 = [a == date for a in aux2]
                 kval = dic['var'] + '_' +  d_file['ti'][8::]
                 for key in valores.keys():
                     if key == kval:
                         speed = np.sqrt(datos[idate]**2 + datos2[idate2]**2)
                         valores[ key ] = np.nanmean(speed)
                         vec_date2 = None
-
+            elif dic['var'] == 'prate':
+                t_d1 = dt.timedelta(days=1)
+                # Hours to extract from file
+                d12 = (date - t_d1).replace(hour=12)
+                d18 = (date - t_d1).replace(hour=18)
+                d00 = date.replace(hour=0)
+                d06 = date.replace(hour=6)
+                #
+                aux = [dt.datetime(a.year, a.month, a.day, a.hour, 0, 0) for a
+                       in vec_date]
+                date_fun = lambda x: x == d12 or x == d18 or x == d00 or x == d06
+                idate = [date_fun(a) for a in aux]
+                kval = dic['var'] + '_' +  d_file['ti'][8::]
+                print(aux[idate])
+                for key in valores.keys():
+                    if key == kval:
+                        # 6 hour between each data; We considerer the rate constant
+                        factor_6h = 6.*60.*60.
+                        valores[ key ] = factor_6h*np.nansum(datos[idate])
             else:
                 valores[ dic['var'] + '_' + d_file['ti'][8::] ] = np.nan
             # Eliminamos memoria
