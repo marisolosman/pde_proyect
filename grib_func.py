@@ -253,13 +253,27 @@ def create_summary_file(dic, fval, fmat):
     return df
 
 
-def join_outfiles(outfolder, variable):
+def join_outfiles(outfolder, estacion, variable):
     """
     Function to join files per year
     made by functions in this file.
     """
-    lista = glob.glob(outfolder + 'data_' + variable + '_*.txt')
-    
+    lista = glob.glob(outfolder + estacion + '/data_' + variable + '_*.txt')
+    final = []
+    for filename in lista:
+        df = pd.read_csv(filename, index_col=0, header=0, sep=';', decimal=',')
+        final.append(df)
+    frame = pd.concat(final, axis=0, ignore_index=True)
+    final_name = outfolder + estacion + '/data_final_' + variable + '.txt'
+    sel_col = list(frame)[1::]
+    frame[sel_col] = frame[sel_col].apply(pd.to_numeric, errors='ignore')
+    frame.to_csv(final_name, sep=';', float_format='%.2f', decimal=',',
+                 date_format='%Y-%m-%d')
+
 
 if __name__ == "__main__":
     print('Hola Main')
+    outfo = '../pde_salidas/'
+    estac = 'resistencia'
+    vari = 'tmin'
+    join_outfiles(outfo, estac, vari)
