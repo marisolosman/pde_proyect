@@ -9,7 +9,7 @@ with 120 days of forecast between 6 hours.
 
 The project considers a forecast to 30 days.
 
-The functions programmed in this grib_func.py 
+The functions programmed in this grib_func.py
 allows to read for specific lat lon meteorological
 station.
 """
@@ -52,12 +52,12 @@ def extract_data_files(fname):
 
 
     return outd
-    
+
 
 def gen_date_range(dfile):
     """
     Function to generate datetime index
-    based on the data provided by the 
+    based on the data provided by the
     name of the file.
     """
     yri = dfile['ti'][0:4]
@@ -244,8 +244,8 @@ def create_summary_file(dic, fval, fmat):
     Function to create a summary file to save the results
     """
 
-    columnas = ['fecha'] 
-    columnas.extend([dic['var'] + '_' + hr for hr in ['00', '06', '12', '18']]) 
+    columnas = ['fecha']
+    columnas.extend([dic['var'] + '_' + hr for hr in ['00', '06', '12', '18']])
     df = pd.DataFrame(columns=columnas)
     df['fecha'] = fval
     df[columnas[1::]] = fmat
@@ -253,6 +253,13 @@ def create_summary_file(dic, fval, fmat):
     return df
 
 
+def join_outfiles(outfolder, variable):
+    """
+    Function to join files per year
+    made by functions in this file.
+    """
+    lista = glob.glob(outfolder + 'data_' + variable + '_*.txt')
+    
+
 if __name__ == "__main__":
     print('Hola Main')
-
