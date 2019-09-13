@@ -297,5 +297,5 @@ if __name__ == "__main__":
     print('Hola Main')
     outfo = '../pde_salidas/'
     estac = 'resistencia'
-    vari = 'tmin'
+    vari = 'wnd10m'
     join_outfiles(outfo, estac, vari)

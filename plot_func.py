@@ -7,6 +7,7 @@ import seaborn as sbn
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
+from statsmodels.distributions.empirical_distribution import ECDF
 
 def defi_title(variable, lang):
     """
@@ -24,6 +25,8 @@ def defi_title(variable, lang):
             titulo = u'Humedad relativa'
         elif variable == 'dswsfc':
             titulo = 'Radiacion (W/m2)'
+        elif variable == 'wnd10m':
+            titulo = u'Viento medio (m/s)'
     elif lang == 'Ing':
         if variable == 'tmin':
             titulo = u'Minimum Temperature (\u00b0C)'
@@ -35,6 +38,8 @@ def defi_title(variable, lang):
             titulo = u'Relative Humidity'
         elif variable == 'dswsfc':
             titulo = 'Radiation (W/m2)'
+        elif variable == 'wnd10m':
+            titulo = u'Mean wind speed (m/s)'
 
     return titulo
 
@@ -54,6 +59,8 @@ def get_xlim(variable):
         resultado = [0, 100]
     elif variable == 'dswsfc':
         resultado = [0, 100]
+    elif variable == 'wnd10m':
+        resultado = [0, 30]
 
     return resultado
 
@@ -101,11 +108,67 @@ def grafica_percentiles(df_mod, df_obs, in_di):
     plt.close(fig)
 
 
+def grafica_ecdf(df_mod, in_di):
+    """
+    Plots the Empirical Cumulative Distribution (ECDF)
+    of the variable using the provided DataFrame
+    """
+    ncol = in_di['var'] + '_00'
+    col = df_mod.loc[:, ncol::]
+    if in_di['var'] == 'tmax' or in_di['var'] == 'tmin':
+        df_mod['ens_mean'] = col.mean(axis=1) - 273.
+    else:
+        df_mod['ens_mean'] = col.mean(axis=1)
+    df_mod['fecha'] = pd.to_datetime(df_mod['fecha'], format='%Y-%m-%d')
+    df_mod['month'] = pd.DatetimeIndex(df_mod['fecha']).month
+    if in_di['mes'] - 1 <= 0:
+        cnd = [12, 1, 2]
+    elif in_di['mes'] + 1 >= 13:
+        cnd = [11, 12, 1]
+    else:
+        cnd = [in_di['mes'] - 1, in_di['mes'], in_di['mes'] + 1]
+    datos = df_mod[df_mod['month'].isin(cnd)]
+    ecdf = ECDF(datos.ens_mean.values)
+    ym = ecdf.y  # Variable (Tmax, Tmin, PP, etc.)
+    xm = ecdf.x  #
+    print(xm, ym)
+    sbn.set(style='ticks', palette='muted', color_codes=True,
+            font_scale=0.8)
+    fig, ax = plt.subplots(nrows=1, ncols=1, facecolor='white')
+    ax.plot(xm, ym, 'o', color='#ed2026', ms=2.5, label='CFS')
+
+    # Eje X -------------------------------------------------------------
+    lim_eje_x = get_xlim(in_di['var'])
+    ax.set_xlim(lim_eje_x)
+    ax.set_xlabel('Variable', fontsize=10)
+    # Eje Y -------------------------------------------------------------
+    ax.yaxis.grid(True, linestyle='--')
+    ax.set_ylabel('Percentil', fontsize=10)
+    #
+    titu_plot = defi_title(in_di['var'], 'Esp')
+    ax.set_title(titu_plot, fontsize=10)
+    #
+    ax.legend(loc='upper left', fancybox=True, prop={'size': 10},
+              handletextpad=0.1)
+    bbox_props = dict(boxstyle='round', fc='w', ec='0.5', alpha=0.9)
+    #
+    sbn.despine(ax=ax, offset=5, trim=True)
+    # -----------------
+    # Save Figure
+    # -------------------
+    outfolder = in_di['outf'] + '/' + in_di['estacion'] + '_plot/'
+    os.makedirs(outfolder, exist_ok=True)
+    fgnm = outfolder + 'ecdf_' + in_di['var'] + '_' + str(in_di['mes']) + '.jpg'
+    plt.savefig(fgnm, dpi=200)
+    # Close figure
+    plt.close(fig)
+
+
 if __name__ == '__main__':
     of = '../pde_salidas/'
     of_p = 'figuras/'
     estac = 'resistencia'
-    vari = 'tmax'
+    vari = 'wnd10m'
     tipo = 'CFS'
     dic0 = {'outf': of + of_p, 'estacion': estac, 'var':vari, 'type': tipo}
     for m in range(1, 13):
@@ -115,3 +178,16 @@ if __name__ == '__main__':
             n_csv = of + estac + '/percentiles_OBS' + '_' + vari + '.txt'
             df_o = pd.read_csv(n_csv, sep=';', decimal=',', header=0).drop(['Unnamed: 0'],axis=1)
             grafica_percentiles(df_CFS, df_o, dic0)
+    # . . . . . . . . . . . . . . . . . . . . . . . .
+
+    of = '../pde_salidas/'
+    of_p = 'figuras/'
+    estac = 'resistencia'
+    vari = 'wnd10m'
+    tipo = 'CFS'
+    dic0 = {'outf': of + of_p, 'estacion': estac, 'var':vari, 'type': tipo}
+    for m in range(1, 13):
+            dic0['mes'] = m
+            n_csv = of + estac + '/data_final' + '_' + vari + '.txt'
+            df_CFS = pd.read_csv(n_csv, sep=';', decimal=',', header=0).drop(['Unnamed: 0'],axis=1)
+            grafica_ecdf(df_CFS, dic0)
