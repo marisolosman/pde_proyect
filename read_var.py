@@ -9,7 +9,7 @@ with 120 days of forecast between 6 hours.
 
 The project considers a forecast to 30 days.
 
-The functions programmed in this grib_func.py 
+The functions programmed in this grib_func.py
 allows to read for specific lat lon meteorological
 station.
 """
@@ -22,6 +22,7 @@ import glob
 import time
 
 from grib_func import get_files_o
+from grib_func import get_files_prate
 from grib_func import get_daily_value
 from grib_func import create_summary_file
 
@@ -49,30 +50,34 @@ dic = {'ofolder':outfolder,
         'n_est':n_est[it]}
 
 # -------------------------------------------------------
-# MAIN CODE 
+# MAIN CODE
 # -------------------------------------------------------
 print(' --- Extrayendo datos para: ' + yy + ' --- ')
 i_fecha = yy+'-01-01'
-f_fecha = yy+'-12-31'
+f_fecha = yy+'-01-05'
 fval = pd.date_range(start=i_fecha, end=f_fecha, freq='D').to_pydatetime().tolist()
 fmat = np.empty((len(fval), 4))
 fmat.fill(np.nan)
 print(fmat.shape)
 
 # Comenzamos a iterar en cada fecha
-
 for idx, fecha in enumerate(fval):
     if fecha.day == 1:
         print('Trabajando en el mes: ' + fecha.strftime('%Y-%m') )
 # --
     if var == 'hr':
         files = get_files_hr(fecha, dic)
+    elif var == 'prate':
+        print(fecha)
+        files = get_files_prate(fecha, dic)
+        print(files)
     else:
         files = get_files_o(fecha, dic)
         valores = get_daily_value(files, fecha, dic)
         fmat[idx, :] = list(valores.values())
         files = None
         valores = None
+exit()
 # --
 os.makedirs(outfolder + n_est[it], exist_ok=True)
 n_file = outfolder + n_est[it] + '/data_' + var +'_' + str(fval[0].year) + '.txt'
@@ -84,6 +89,3 @@ df[sel_col] = df[sel_col].apply(pd.to_numeric, errors='ignore')
 df.to_csv(n_file, sep=';', float_format='%.2f', decimal=',',
           date_format='%Y-%m-%d')
 print("--- %s seconds ---" % (time.time() - start_time))
-
-
-

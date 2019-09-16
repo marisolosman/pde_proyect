@@ -50,7 +50,6 @@ def extract_data_files(fname):
     outd = {'var':filen[0], 'ensMem':filen[1], 'ti':filen[2], 'tv':filen[3],\
             'tic':filen[4]}
 
-
     return outd
 
 
@@ -158,6 +157,37 @@ def get_files_o(date, dic):
         d4 = (date - iv).replace(hour=0)
         wkfolder = dic['dfolder'] + dic['var'] + '/' + str(d1.year) + '/'
         for dx in [d1, d2, d3, d4]:
+            sd1 = dx.strftime('%Y%m%d%H')
+            n_file = wkfolder + dic['var'] + '_f.01.' + sd1
+            f1 = glob.glob(n_file + '*.grb2')
+            if f1:
+                lfls.append(f1[0])
+    # End IF
+    return lfls
+
+
+def get_files_prate(date, dic):
+    """
+    Function to obtain files to extract
+    wmd10m, dswsfc, tmax, tmin
+    In this case for these particular variables
+    the idea is to get a file with prognostic
+    for the four hours of the date and to work
+    with those four values
+    """
+    lfls = []
+    if date == dt.datetime(1999,1,1):
+        print('No hay archivos de PRATE para 1999-01-01')
+    else:
+        # Test all dates from previous day and all hours
+        iv2 = dt.timedelta(days=2)
+        iv1 = dt.timedelta(days=1)
+        d1 = (date - iv2).replace(hour=12)
+        d2 = (date - iv2).replace(hour=18)
+        d3 = (date - iv1).replace(hour=0)
+        d4 = (date - iv1).replace(hour=6)
+        for dx in [d1, d2, d3, d4]:
+            wkfolder = dic['dfolder'] + dic['var'] + '/' + str(dx.year) + '/'
             sd1 = dx.strftime('%Y%m%d%H')
             n_file = wkfolder + dic['var'] + '_f.01.' + sd1
             f1 = glob.glob(n_file + '*.grb2')

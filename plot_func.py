@@ -60,7 +60,7 @@ def get_xlim(variable):
     elif variable == 'dswsfc':
         resultado = [0, 100]
     elif variable == 'wnd10m':
-        resultado = [0, 30]
+        resultado = [-1, 12]
 
     return resultado
 
@@ -108,11 +108,30 @@ def grafica_percentiles(df_mod, df_obs, in_di):
     plt.close(fig)
 
 
-def grafica_ecdf(df_mod, in_di):
+def grafica_ecdf(df_mod, df_o, in_di):
     """
     Plots the Empirical Cumulative Distribution (ECDF)
     of the variable using the provided DataFrame
     """
+    # Seleccionamos el trimestre a trabajar segun el mes
+    if in_di['mes'] - 1 <= 0:
+        cnd = [12, 1, 2]
+    elif in_di['mes'] + 1 >= 13:
+        cnd = [11, 12, 1]
+    else:
+        cnd = [in_di['mes'] - 1, in_di['mes'], in_di['mes'] + 1]
+    # -------------------------------------
+    # Para las OBS
+    df_o.columns = ['fecha', 'variable']
+    df_o['fecha'] = pd.to_datetime(df_o['fecha'], format='%Y-%m-%d')
+    df_o['month'] = pd.DatetimeIndex(df_o['fecha']).month
+    fmat = np.empty((99, 13))
+    fmat.fill(np.nan)
+    fmat[:, 0] = np.arange(1, 100)
+    datos_o = df_o[df_o['month'].isin(cnd)]
+    ecdf_o = ECDF(datos_o.variable.values)
+    # -------------------------------------
+    # Para el modelo
     ncol = in_di['var'] + '_00'
     col = df_mod.loc[:, ncol::]
     if in_di['var'] == 'tmax' or in_di['var'] == 'tmin':
@@ -121,22 +140,20 @@ def grafica_ecdf(df_mod, in_di):
         df_mod['ens_mean'] = col.mean(axis=1)
     df_mod['fecha'] = pd.to_datetime(df_mod['fecha'], format='%Y-%m-%d')
     df_mod['month'] = pd.DatetimeIndex(df_mod['fecha']).month
-    if in_di['mes'] - 1 <= 0:
-        cnd = [12, 1, 2]
-    elif in_di['mes'] + 1 >= 13:
-        cnd = [11, 12, 1]
-    else:
-        cnd = [in_di['mes'] - 1, in_di['mes'], in_di['mes'] + 1]
     datos = df_mod[df_mod['month'].isin(cnd)]
-    ecdf = ECDF(datos.ens_mean.values)
-    ym = ecdf.y  # Variable (Tmax, Tmin, PP, etc.)
-    xm = ecdf.x  #
-    print(xm, ym)
+    ecdf_m = ECDF(datos.ens_mean.values)
+    # ---------------------------------------
+    # Seteamos los datos para el grafico
+    yo = ecdf_o.y  # Variable (Tmax, Tmin, PP, etc.)
+    xo = ecdf_o.x  #
+    ym = ecdf_m.y  # Variable (Tmax, Tmin, PP, etc.)
+    xm = ecdf_m.x  #
+    # ---- Comenzamos a graficar -------------------------
     sbn.set(style='ticks', palette='muted', color_codes=True,
             font_scale=0.8)
     fig, ax = plt.subplots(nrows=1, ncols=1, facecolor='white')
     ax.plot(xm, ym, 'o', color='#ed2026', ms=2.5, label='CFS')
-
+    ax.plot(xo, yo, 'o', color='#1aba02', ms=2.5, label='OBS')
     # Eje X -------------------------------------------------------------
     lim_eje_x = get_xlim(in_di['var'])
     ax.set_xlim(lim_eje_x)
@@ -165,6 +182,9 @@ def grafica_ecdf(df_mod, in_di):
 
 
 if __name__ == '__main__':
+    # ----------------
+    from pdf_func import calc_pdf_OBS
+    # ----------------
     of = '../pde_salidas/'
     of_p = 'figuras/'
     estac = 'resistencia'
@@ -179,15 +199,23 @@ if __name__ == '__main__':
             df_o = pd.read_csv(n_csv, sep=';', decimal=',', header=0).drop(['Unnamed: 0'],axis=1)
             grafica_percentiles(df_CFS, df_o, dic0)
     # . . . . . . . . . . . . . . . . . . . . . . . .
-
+    # Datos del modelo
     of = '../pde_salidas/'
     of_p = 'figuras/'
     estac = 'resistencia'
     vari = 'wnd10m'
-    tipo = 'CFS'
-    dic0 = {'outf': of + of_p, 'estacion': estac, 'var':vari, 'type': tipo}
+
+    dic0 = {'outf': of + of_p, 'estacion': estac, 'var':vari, 'type':'CFS'}
+    
+    # Datos para extraer observaciones
+    db = 'c:/Felix/ORA/base_datos/BaseNueva/ora.mdb'
+    idest = 107  # Resistencia
+    dic1 = {'outfo': of, 'estacion': estac, 'dbf': db,
+            'iest': idest, 't_estac':'SMN', 'var':vari, 'type':'OBS'}
     for m in range(1, 13):
             dic0['mes'] = m
             n_csv = of + estac + '/data_final' + '_' + vari + '.txt'
-            df_CFS = pd.read_csv(n_csv, sep=';', decimal=',', header=0).drop(['Unnamed: 0'],axis=1)
-            grafica_ecdf(df_CFS, dic0)
+            df_CFS = pd.read_csv(n_csv, sep=';', decimal=',',
+                                 header=0).drop(['Unnamed: 0'],axis=1)
+            df_OBS = calc_pdf_OBS(dic1)
+            grafica_ecdf(df_CFS, df_OBS, dic0)

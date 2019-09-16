@@ -176,7 +176,7 @@ def calc_pdf_OBS(in_di):
     else:
         cnxn = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(drv,
                                                            in_di['dbf'], pwd))
-        SQL_q, = get_sql_string(in_di['var'], in_di['t_estac'], str(in_di['iest']))
+        SQL_q, SQL_extra = get_sql_string(in_di['var'], in_di['t_estac'], str(in_di['iest']))
         df = pd.read_sql_query(SQL_q, cnxn)
         cnxn.close()
     df.columns = ['fecha', 'variable']
@@ -196,6 +196,8 @@ def calc_pdf_OBS(in_di):
         prc = calc_percentil(datos.variable.values)
         fmat[:, mes] = prc
     save_tabla_percentil(in_di, fmat)
+    # Devolvemos el total de datos historicos
+    return df[['fecha', 'variable']]
 
 
 if __name__ == '__main__':
