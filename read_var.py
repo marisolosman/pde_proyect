@@ -54,7 +54,7 @@ dic = {'ofolder':outfolder,
 # -------------------------------------------------------
 print(' --- Extrayendo datos para: ' + yy + ' --- ')
 i_fecha = yy+'-01-01'
-f_fecha = yy+'-01-05'
+f_fecha = yy+'-12-31'
 fval = pd.date_range(start=i_fecha, end=f_fecha, freq='D').to_pydatetime().tolist()
 fmat = np.empty((len(fval), 4))
 fmat.fill(np.nan)
@@ -68,16 +68,17 @@ for idx, fecha in enumerate(fval):
     if var == 'hr':
         files = get_files_hr(fecha, dic)
     elif var == 'prate':
-        print(fecha)
         files = get_files_prate(fecha, dic)
-        print(files)
+        valores = get_daily_value(files, fecha, dic)
+        fmat[idx, :] = list(valores.values())
+        files = None
+        valores = None
     else:
         files = get_files_o(fecha, dic)
         valores = get_daily_value(files, fecha, dic)
         fmat[idx, :] = list(valores.values())
         files = None
         valores = None
-exit()
 # --
 os.makedirs(outfolder + n_est[it], exist_ok=True)
 n_file = outfolder + n_est[it] + '/data_' + var +'_' + str(fval[0].year) + '.txt'

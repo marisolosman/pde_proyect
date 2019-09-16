@@ -182,10 +182,10 @@ def get_files_prate(date, dic):
         # Test all dates from previous day and all hours
         iv2 = dt.timedelta(days=2)
         iv1 = dt.timedelta(days=1)
-        d1 = (date - iv2).replace(hour=12)
-        d2 = (date - iv2).replace(hour=18)
-        d3 = (date - iv1).replace(hour=0)
-        d4 = (date - iv1).replace(hour=6)
+        d1 = (date - iv1).replace(hour=0)
+        d2 = (date - iv1).replace(hour=6)
+        d3 = (date - iv2).replace(hour=12)
+        d4 = (date - iv2).replace(hour=18)
         for dx in [d1, d2, d3, d4]:
             wkfolder = dic['dfolder'] + dic['var'] + '/' + str(dx.year) + '/'
             sd1 = dx.strftime('%Y%m%d%H')
@@ -274,9 +274,9 @@ def get_daily_value(files, date, dic):
                 date_fun = lambda x: x == d12 or x == d18 or x == d00 or x == d06
                 idate = [date_fun(a) for a in aux]
                 kval = dic['var'] + '_' +  d_file['ti'][8::]
-                print(aux[idate])
                 for key in valores.keys():
                     if key == kval:
+                        # Datos de prate vienen en Kg/m^2/s  (equivalente a mm/s)
                         # 6 hour between each data; We considerer the rate constant
                         factor_6h = 6.*60.*60.
                         valores[ key ] = factor_6h*np.nansum(datos[idate])
