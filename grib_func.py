@@ -149,14 +149,21 @@ def get_files_o(date, dic):
         if f1:
             lfls.append(f1[0])
     else:
-        # Test all dates from previous day and all hours
-        iv = dt.timedelta(days=1)
-        d1 = (date - iv).replace(hour=18) # forecast from previous day at 18
-        d2 = (date - iv).replace(hour=12)
-        d3 = (date - iv).replace(hour=6)
-        d4 = (date - iv).replace(hour=0)
-        wkfolder = dic['dfolder'] + dic['var'] + '/' + str(d1.year) + '/'
+        if dic['var'] == 'dswsfc':
+            iv = dt.timedelta(days=1)
+            d1 = date.replace(hour=0) # forecast from previous day at 18
+            d2 = (date - iv).replace(hour=6)
+            d3 = (date - iv).replace(hour=12)
+            d4 = (date - iv).replace(hour=18)
+        else:
+            # Test all dates from previous day and all hours
+            iv = dt.timedelta(days=1)
+            d1 = (date - iv).replace(hour=18) # forecast from previous day at 18
+            d2 = (date - iv).replace(hour=12)
+            d3 = (date - iv).replace(hour=6)
+            d4 = (date - iv).replace(hour=0)
         for dx in [d1, d2, d3, d4]:
+            wkfolder = dic['dfolder'] + dic['var'] + '/' + str(dx.year) + '/'
             sd1 = dx.strftime('%Y%m%d%H')
             n_file = wkfolder + dic['var'] + '_f.01.' + sd1
             f1 = glob.glob(n_file + '*.grb2')
@@ -206,6 +213,8 @@ def get_daily_value(files, date, dic):
     - fecha: Date to use as a value
     - dic: Dictionary containing data from var, folders, etc
     """
+    from scipy import integrate
+
     if not files:
         sd = date.strftime('%Y-%m-%d')
         valores = {dic['var'] + '_00': np.nan, dic['var'] + '_06': np.nan,
@@ -276,10 +285,32 @@ def get_daily_value(files, date, dic):
                 kval = dic['var'] + '_' +  d_file['ti'][8::]
                 for key in valores.keys():
                     if key == kval:
-                        # Datos de prate vienen en Kg/m^2/s  (equivalente a mm/s)
-                        # 6 hour between each data; We considerer the rate constant
+                        # prate has units of Kg/m^2/s equivalent to mm/s
+                        # 6 hour between each data
+                        # We considerer the rate constant
                         factor_6h = 6.*60.*60.
                         valores[ key ] = factor_6h*np.nansum(datos[idate])
+            elif dic['var'] == 'dswsfc':
+                t_d1 = dt.timedelta(days=1)
+                # Hours to extract from file
+                d06 = date.replace(hour=6)
+                d12 = date.replace(hour=12)
+                d18 = date.replace(hour=18)
+                d00 = (date + t_d1).replace(hour=0)
+                #
+                aux = [dt.datetime(a.year, a.month, a.day, a.hour, 0, 0) for a
+                       in vec_date]
+                date_fun = lambda x: x == d12 or x == d18 or x == d00 or x == d06
+                idate = [date_fun(a) for a in aux]
+                kval = dic['var'] + '_' +  d_file['ti'][8::]
+                for key in valores.keys():
+                    if key == kval:
+                        y = datos[idate]
+                        x = [3., 9., 15., 21] * 60 * 60  # En segundos
+                        print(y, x)
+                        print(integrate.simps(y, x))
+                        print(np.trapz(y, x))
+                        #valores[ key ] = 3
             else:
                 valores[ dic['var'] + '_' + d_file['ti'][8::] ] = np.nan
             # Eliminamos memoria
