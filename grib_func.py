@@ -305,12 +305,12 @@ def get_daily_value(files, date, dic):
                 kval = dic['var'] + '_' +  d_file['ti'][8::]
                 for key in valores.keys():
                     if key == kval:
-                        y = datos[idate]
-                        x = [3., 9., 15., 21] * 60 * 60  # En segundos
-                        print(y, x)
-                        print(integrate.simps(y, x))
-                        print(np.trapz(y, x))
-                        #valores[ key ] = 3
+                        y = np.array(datos[idate])
+                        # Agregamos dos ceros de valor a hora 0 y hora 23
+                        y = np.insert(y, 0, 0.)
+                        y = np.append(y, 0.)
+                        x = np.array([0., 3., 9., 15., 21, 23]) * 60 * 60  # En segundos
+                        valores[ key ] = np.trapz(y, x)*1e-6 # Mj/m2
             else:
                 valores[ dic['var'] + '_' + d_file['ti'][8::] ] = np.nan
             # Eliminamos memoria
