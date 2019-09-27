@@ -10,9 +10,9 @@ import matplotlib as mpl
 from statsmodels.distributions.empirical_distribution import ECDF
 
 def defi_title(variable, lang):
-    """
+    '''
     Define titulo de grafico dada la variable
-    """
+    '''
     titulo = ''
     if lang == 'Esp':
         if variable == 'tmin':
@@ -24,7 +24,7 @@ def defi_title(variable, lang):
         elif variable == 'rh':
             titulo = u'Humedad relativa'
         elif variable == 'dswsfc':
-            titulo = 'Radiacion (W/m2)'
+            titulo = 'Radiacion (MJ/m2)'
         elif variable == 'wnd10m':
             titulo = u'Viento medio (m/s)'
     elif lang == 'Ing':
@@ -37,7 +37,7 @@ def defi_title(variable, lang):
         elif variable == 'rh':
             titulo = u'Relative Humidity'
         elif variable == 'dswsfc':
-            titulo = 'Radiation (W/m2)'
+            titulo = 'Radiation (MJ/m2)'
         elif variable == 'wnd10m':
             titulo = u'Mean wind speed (m/s)'
 
@@ -45,9 +45,9 @@ def defi_title(variable, lang):
 
 
 def get_xlim(variable):
-    """
+    '''
     Define x limits acoording to the variable
-    """
+    '''
     resultado = [0, 100]
     if variable == 'tmin':
         resultado = [-5, 35]
@@ -58,7 +58,7 @@ def get_xlim(variable):
     elif variable == 'rh':
         resultado = [0, 100]
     elif variable == 'dswsfc':
-        resultado = [0, 100]
+        resultado = [0, 50]
     elif variable == 'wnd10m':
         resultado = [-1, 12]
 
@@ -66,12 +66,12 @@ def get_xlim(variable):
 
 
 def grafica_percentiles(df_mod, df_obs, in_di):
-    """
+    '''
     Funcion para graficar percentiles.
     Recibe un DataFrame como el generado
     por pdf_func.py tanto para OBS, como
     para CFS
-    """
+    '''
     yo = df_obs.iloc[:, 0].values  # Variable (Tmax, Tmin, PP, etc.)
     xo = df_obs.iloc[:, in_di['mes']].values  # Percentiles
     ym = df_mod.iloc[:, 0].values  # Variable (Tmax, Tmin, PP, etc.)
@@ -109,10 +109,10 @@ def grafica_percentiles(df_mod, df_obs, in_di):
 
 
 def grafica_ecdf(df_mod, df_o, in_di):
-    """
+    '''
     Plots the Empirical Cumulative Distribution (ECDF)
     of the variable using the provided DataFrame
-    """
+    '''
     # Seleccionamos el trimestre a trabajar segun el mes
     if in_di['mes'] - 1 <= 0:
         cnd = [12, 1, 2]
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     of = '../pde_salidas/'
     of_p = 'figuras/'
     estac = 'resistencia'
-    vari = 'wnd10m'
+    vari = 'prate'
     tipo = 'CFS'
     dic0 = {'outf': of + of_p, 'estacion': estac, 'var':vari, 'type': tipo}
     for m in range(1, 13):
@@ -203,15 +203,14 @@ if __name__ == '__main__':
     of = '../pde_salidas/'
     of_p = 'figuras/'
     estac = 'resistencia'
-    vari = 'wnd10m'
+    vari = 'prate'
 
     dic0 = {'outf': of + of_p, 'estacion': estac, 'var':vari, 'type':'CFS'}
-    
+
     # Datos para extraer observaciones
-    db = 'c:/Felix/ORA/base_datos/BaseNueva/ora.mdb'
-    idest = 107  # Resistencia
-    dic1 = {'outfo': of, 'estacion': estac, 'dbf': db,
-            'iest': idest, 't_estac':'SMN', 'var':vari, 'type':'OBS'}
+    idest = '107'
+    dic1 = {'outfo': of, 'estacion': estac, 'iest': idest, 't_estac':'SMN',
+            'var':vari, 'type':'OBS'}
     for m in range(1, 13):
             dic0['mes'] = m
             n_csv = of + estac + '/data_final' + '_' + vari + '.txt'
