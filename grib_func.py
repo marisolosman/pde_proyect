@@ -109,23 +109,23 @@ def get_files_hr(date, dic):
     <var>.<ensMem>.<yyyymmddhh t(i)>.<yyyymmddhh t(v)>.<yyyymmdd t(ic)>.grb
     """
     iv = dt.timedelta(days=1)
-    d1 = (date - iv).replace(hour=18)
-    d2 = date
-    d3 = date.replace(hour=6)
-    d4 = date.replace(hour=12)
+    d1 = date.replace(hour=0)
+    d2 = (date - iv).replace(hour=6)
+    d3 = (date - iv).replace(hour=12)
+    d4 = (date - iv).replace(hour=18)
 
-    vr = ['pressfc', 'q2m', 'tmp2m']
+    variables = ['pressfc', 'q2m', 'tmp2m']
     outf = {}
-    for var in vr:
+    for vr in variables:
+        lfls = []
         for dx in [d1, d2, d3, d4]:
-            wkfolder = dic['dfolder'] + var + '/' + str(dx.year) + '/'
+            wkfolder = dic['dfolder'] + vr + '/' + str(dx.year) + '/'
             sd1 = dx.strftime('%Y%m%d%H')
-            f1 = glob.glob(wkfolder + var + '_f.01.' + sd1 + '*.grb2')
-            lfls = []
+            f1 = glob.glob(wkfolder + vr + '_f.01.' + sd1 + '*.grb2')
             if f1:
                 lfls.append(f1[0])
         # End loop of dates
-        outf[var] = lfls
+        outf[vr] = lfls
     # End of LOOP
 
     return outf
@@ -213,7 +213,6 @@ def get_daily_value(files, date, dic):
     - fecha: Date to use as a value
     - dic: Dictionary containing data from var, folders, etc
     """
-    from scipy import integrate
 
     if not files:
         sd = date.strftime('%Y-%m-%d')
@@ -320,6 +319,27 @@ def get_daily_value(files, date, dic):
         # End of LOOP
 
     return valores
+
+
+def get_values_hr(files_hr, dic, date):
+    """
+    Function to return four values for each key from 
+    dic in files_hr. 
+    The keys correspond to the name of the variables.
+    """
+
+    if not files_hr:
+        y = np.empty(4)
+        y[:] = np.nan
+        salida = {'pressfc':y, 'tmp2m':y, 'q2m':y}
+    else:
+        for key in files_hr.keys():  # Loop en variables
+            files_i = files_hr[ key ]
+            for archivo in files_i:  # Loop en archivos
+                grbs = xr.open_dataset(archivo, engine='pynio')
+
+
+
 
 
 def create_summary_file(dic, fval, fmat):
