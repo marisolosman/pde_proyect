@@ -321,25 +321,51 @@ def get_daily_value(files, date, dic):
     return valores
 
 
-def get_values_hr(files_hr, dic, date):
+def get_values_hr(dic_hr, dic, date):
     """
-    Function to return four values for each key from 
-    dic in files_hr. 
+    Function to return four values for each key from
+    dic in files_hr.
     The keys correspond to the name of the variables.
     """
 
-    if not files_hr:
+    if not dic_hr:
         y = np.empty(4)
         y[:] = np.nan
         salida = {'pressfc':y, 'tmp2m':y, 'q2m':y}
     else:
+        salida = {}
         for key in files_hr.keys():  # Loop en variables
             files_i = files_hr[ key ]
             for archivo in files_i:  # Loop en archivos
+                d_file = extract_data_files(archivo)
                 grbs = xr.open_dataset(archivo, engine='pynio')
-
-
-
+                nvar = list(grbs.data_vars.keys())[0]
+                xe = np.array(dic['lon_e']) % 360  # Pasamos de [-180, 180] a [0, 360]
+                ye = dic['lat_e']
+                data = grbs[nvar].sel(lon_0=xe, lat_0=ye, method='nearest')
+                vec_date = gen_date_range_v2(d_file, data.coords[data.dims[0]].values)
+                datos = data.values
+                # Eliminamos memoria
+                grbs.close()
+                grbs = None
+                data = None
+                #
+                t_d1 = dt.timedelta(days=1)
+                # Hours to extract from file
+                d06 = date.replace(hour=6)
+                d12 = date.replace(hour=12)
+                d18 = date.replace(hour=18)
+                d00 = (date + t_d1).replace(hour=0)
+                #
+                aux = [dt.datetime(a.year, a.month, a.day, a.hour, 0, 0) for a
+                       in vec_date]
+                date_fun = lambda x: x == d12 or x == d18 or x == d00 or x == d06
+                idate = [date_fun(a) for a in aux]
+                y = np.array(datos[idate])
+                salida[ key + '_' + d_file['ti'][8::] ] = y
+            # End of LOOP archivos
+        # Enf of LOOP variables
+        return salida
 
 
 def create_summary_file(dic, fval, fmat):
