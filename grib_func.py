@@ -368,6 +368,37 @@ def get_values_hr(dic_hr, dic, date):
         return salida
 
 
+def calculate_hr(values_hr, tipo):
+    '''
+    Function that use output from get_values_hr and calculate HR for
+    _00, _06, _12, _18 keys in dictionary.
+    '''
+    horas = ['_00', '_06', '_12', '_18']
+    varis = ['pressfc', 'q2m', 'tmp2m', 'rh']
+    salida = {}
+    for ho in horas:
+        psfc = values_hr[varis[0] + ho]
+        tmp2m = values_hr[varis[1] + ho]
+        q2m = values_hr[varis[2] + ho]
+        # Expresion para calcular HR
+        T0 = 273.16
+        aux_val0 = np.exp(17.63 * np.divide(tmp2m - T0, tmp2m - 29.65))
+        aux_val1 = np.power(aux_val0, -1)
+        aux_val2 = 0.263 * psfc * q2m * aux_val1  # 4 valores para cada hora RH
+        if tipo == 'max':
+            salida[varis[3] + ho] = np.nanmax(np.array(aux_val2))
+        elif tipo == 'min':
+            salida[varis[3] + ho] = np.nanmin(np.array(aux_val2))
+        elif tipo == 'mean':
+            salida[varis[3] + ho] = np.nanmean(np.array(aux_val2))
+        else:
+            # Si no se entrega un valor correcto de tipo,
+            # calcula la media de las 4 horas como resultado.
+            salida[varis[3] + ho] = np.nanmean(np.array(aux_val2))
+    # End LOOP
+    return salida
+
+
 def create_summary_file(dic, fval, fmat):
     """
     Function to create a summary file to save the results

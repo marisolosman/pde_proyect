@@ -24,18 +24,23 @@ import time
 from grib_func import get_files_o
 from grib_func import get_files_prate
 from grib_func import get_daily_value
+from grib_func import get_files_hr
+from grib_func import get_values_hr
+from grib_func import calculate_hr
 from grib_func import create_summary_file
 
 # --------------------------------------------
 start_time = time.time()
 # ############################################
 folder = '/datos2/CFSReana/'
-yy     = sys.argv[1]
-var    = sys.argv[2]
+yy     = sys.argv[1]  # primer argumento Year
+var    = sys.argv[2]  # Segundo argumento variable
 print(yy, var)
 # Other options: tmax, tmin, dswsfc,
 #                hr, wnd10m
-
+if var == 'hr':  # Si se calcula HR hay que elegir que calcular:
+    operacion = 'min'  # programados: 'min', 'max' y 'mean'
+#
 lat_e = [-27.45]  # Test con estacion Resistencia (Chaco, SMN)
 lon_e = [-59.05]
 n_est = ['resistencia']
@@ -54,7 +59,7 @@ dic = {'ofolder':outfolder,
 # -------------------------------------------------------
 print(' --- Extrayendo datos para: ' + yy + ' --- ')
 i_fecha = yy+'-01-01'
-f_fecha = yy+'-12-31'
+f_fecha = yy+'-01-01'
 fval = pd.date_range(start=i_fecha, end=f_fecha, freq='D').to_pydatetime().tolist()
 fmat = np.empty((len(fval), 4))
 fmat.fill(np.nan)
@@ -64,9 +69,20 @@ print(fmat.shape)
 for idx, fecha in enumerate(fval):
     if fecha.day == 1:
         print('Trabajando en el mes: ' + fecha.strftime('%Y-%m') )
+        if var == 'hr':
+            print('Extrayendo HR de GRIB. Se calculara usando ' + operacion)
 # --
     if var == 'hr':
-        files = get_files_hr(fecha, dic)
+
+        files = get_files_hr(fecha, dic)  # Archivos de t2m, q2m y psfc
+        # Valores de t2m, q2m y psfc para cada ensamble: 00, 06, 12, 18
+        valores_d = get_values_hr(files, dic, fecha)
+        # Calculo de humedad con cada ensamble: rh_00, rh_06, rh_12, rh_18
+        rel_h = calculate_hr(valores_d, operacion)
+        fmat[idx, :] = list(rel_h.values())
+        files = None
+        valores_d = None
+        rel_h = None
     elif var == 'prate':
         files = get_files_prate(fecha, dic)
         valores = get_daily_value(files, fecha, dic)
