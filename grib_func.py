@@ -334,8 +334,8 @@ def get_values_hr(dic_hr, dic, date):
         salida = {'pressfc':y, 'tmp2m':y, 'q2m':y}
     else:
         salida = {}
-        for key in files_hr.keys():  # Loop en variables
-            files_i = files_hr[ key ]
+        for key in dic_hr.keys():  # Loop en variables
+            files_i = dic_hr[ key ]
             for archivo in files_i:  # Loop en archivos
                 d_file = extract_data_files(archivo)
                 grbs = xr.open_dataset(archivo, engine='pynio')
