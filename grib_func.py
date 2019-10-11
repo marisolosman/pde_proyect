@@ -327,13 +327,13 @@ def get_values_hr(dic_hr, dic, date):
     dic in files_hr.
     The keys correspond to the name of the variables.
     """
-
-    if not dic_hr:
-        y = np.empty(4)
-        y[:] = np.nan
-        salida = {'pressfc':y, 'tmp2m':y, 'q2m':y}
-    else:
-        salida = {}
+    y = np.empty(4)
+    y[:] = np.nan
+    salida = {'pressfc_00':y, 'pressfc_06':y, 'pressfc_12':y, 'pressfc_18':y,
+              'tmp2m_00':y, 'tmp2m_06':y, 'tmp2m_12':y, 'tmp2m_18':y,
+              'q2m_00':y, 'q2m_06':y, 'q2m_12':y, 'q2m_18':y}
+        
+    if dic_hr:
         for key in dic_hr.keys():  # Loop en variables
             files_i = dic_hr[ key ]
             for archivo in files_i:  # Loop en archivos
@@ -365,6 +365,7 @@ def get_values_hr(dic_hr, dic, date):
                 salida[ key + '_' + d_file['ti'][8::] ] = y
             # End of LOOP archivos
         # Enf of LOOP variables
+
         return salida
 
 
@@ -378,24 +379,32 @@ def calculate_hr(values_hr, tipo):
     salida = {}
     for ho in horas:
         psfc = values_hr[varis[0] + ho]
-        tmp2m = values_hr[varis[1] + ho]
-        q2m = values_hr[varis[2] + ho]
+        q2m = values_hr[varis[1] + ho]
+        tmp2m = values_hr[varis[2] + ho]
         # Expresion para calcular HR
         T0 = 273.16
-        aux_val0 = np.exp(17.63 * np.divide(tmp2m - T0, tmp2m - 29.65))
-        aux_val1 = np.power(aux_val0, -1)
-        aux_val2 = 0.263 * psfc * q2m * aux_val1  # 4 valores para cada hora RH
+        aux_val0 = np.divide(tmp2m - T0, tmp2m - 29.65)
+        aux_val1 = np.exp(17.63 * aux_val0)
+        aux_val2 = np.power(aux_val1, -1)
+        aux_val3 = 0.263 * psfc * q2m * aux_val2  # 4 valores para cada hora RH
         if tipo == 'max':
-            salida[varis[3] + ho] = np.nanmax(np.array(aux_val2))
+            salida[varis[3] + ho] = np.nanmax(np.array(aux_val3))
         elif tipo == 'min':
-            salida[varis[3] + ho] = np.nanmin(np.array(aux_val2))
+            salida[varis[3] + ho] = np.nanmin(np.array(aux_val3))
         elif tipo == 'mean':
-            salida[varis[3] + ho] = np.nanmean(np.array(aux_val2))
+            salida[varis[3] + ho] = np.nanmean(np.array(aux_val3))
         else:
             # Si no se entrega un valor correcto de tipo,
             # calcula la media de las 4 horas como resultado.
-            salida[varis[3] + ho] = np.nanmean(np.array(aux_val2))
-    # End LOOP
+            salida[varis[3] + ho] = np.nanmean(np.array(aux_val3))
+        # Check if HR>100 and HR<0 change it to 100 and 0 respectively
+        aux_val4 = salida[varis[3] + ho]
+        if aux_val4 > 100:
+            salida[varis[3] + ho] = 100.
+        elif aux_val4 < 0:
+            salida[varis[3] + ho] = 0.
+    # End of LOOP
+
     return salida
 
 

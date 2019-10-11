@@ -66,3 +66,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Archivo Bash run 1 year
+run_test_bash.sh
