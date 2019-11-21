@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 
+#Datos Estaticos
+datos/
 
 #Compiled source #
 ###################

@@ -96,11 +96,24 @@ for idx, fecha in enumerate(fval):
         valores = None
 # --
 os.makedirs(outfolder + n_est[it], exist_ok=True)
-if var == 'hr':
+if var == 'hr' and operacion == 'mean':
     n_file = outfolder + n_est[it] + '/data_' + var +\
-            operacion + '_' + str(fval[0].year) + '.txt'
+             '_' + str(fval[0].year) + '.txt'
+elif var == 'hr' and operacion == 'min':
+    n_file = outfolder + n_est[it] + '/data_' + var +\
+             operacion + '_' + str(fval[0].year) + '.txt'
+elif var == 'hr' and operacion == 'max':
+    n_file = outfolder + n_est[it] + '/data_' + var +\
+             operacion + '_' + str(fval[0].year) + '.txt'
 else:
-    n_file = outfolder + n_est[it] + '/data_' + var +\
+    fvar = var
+    if var == 'prate':
+        fvar = 'precip'
+    elif var == 'dswsfc':
+        fvar = 'radsup'
+    elif var == 'wnd10m':
+        fvar = velviento
+    n_file = outfolder + n_est[it] + '/data_' + fvar +\
             '_' + str(fval[0].year) + '.txt'
 
 if os.path.exists(n_file):
@@ -111,4 +124,3 @@ df[sel_col] = df[sel_col].apply(pd.to_numeric, errors='ignore')
 df.to_csv(n_file, sep=';', float_format='%.2f', decimal=',',
           date_format='%Y-%m-%d')
 print("--- %s seconds ---" % (time.time() - start_time))
-

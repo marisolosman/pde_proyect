@@ -21,20 +21,22 @@ def get_hist_sql_string(tv, ti, ide):
     database of ORA (ora.mdb)
     """
     SQL_q2 = ''
-    if tv == 'prate':
+    if tv == 'precip':
         SQL_q1 = '''
             SELECT Fecha, Precipitacion FROM DatoDiario
             WHERE Estacion = {}
-            AND (((DatoDiario.Fecha)>#1/1/1999#))
-            AND (((DatoDiario.Fecha)<#12/31/2010#))
+            AND (((DatoDiario.Fecha)>=#1/1/1999#))
+            AND (((DatoDiario.Fecha)<=#12/31/2010#))
+            ORDER BY Fecha
             '''.format(ide)
     elif tv == 'tmin':
         if ti == 'SMN':
             SQL_q1 = '''
                 SELECT Fecha, Tmin FROM DatoDiarioSMN
                 WHERE Estacion = {}
-                AND (((DatoDiarioSMN.Fecha)>#1/1/1999#))
-                AND (((DatoDiarioSMN.Fecha)<#12/31/2010#))
+                AND (((DatoDiarioSMN.Fecha)>=#1/1/1999#))
+                AND (((DatoDiarioSMN.Fecha)<=#12/31/2010#))
+                ORDER BY Fecha
                 '''.format(ide)
     elif tv == 'tmax':
         if ti == 'SMN':
@@ -43,33 +45,135 @@ def get_hist_sql_string(tv, ti, ide):
                 WHERE Estacion = {}
                 AND (((DatoDiarioSMN.Fecha)>=#1/1/1999#))
                 AND (((DatoDiarioSMN.Fecha)<=#12/31/2010#))
+                ORDER BY Fecha
                 '''.format(ide)
-    elif tv == 'wnd10m':
+    elif tv == 'velviento':
         if ti == 'SMN':
             SQL_q1 = '''
                 SELECT Fecha, Viento FROM DatoDiarioSMN
                 WHERE Estacion = {}
                 AND (((DatoDiarioSMN.Fecha)>=#1/1/1999#))
                 AND (((DatoDiarioSMN.Fecha)<=#12/31/2007#))
+                ORDER BY Fecha
                 '''.format(ide)
             SQL_q2 = '''
                 SELECT Fecha, Hora, Viento FROM MedicionHorariaSMN
                 WHERE Estacion = {}
                 AND (((MedicionHorariaSMN.Fecha)>=#1/1/2008#))
                 AND (((MedicionHorariaSMN.Fecha)<=#12/31/2010#))
+                ORDER BY Fecha
                 '''.format(ide)
-    elif tv == 'dswsfc':
+    elif tv == 'radsup':
         if ti == 'SMN':
             SQL_q1 = '''
                 SELECT Fecha, Heliofania FROM DatoDiarioSMN
                 WHERE Estacion = {}
                 AND (((DatoDiarioSMN.Fecha)>=#1/1/1999#))
                 AND (((DatoDiarioSMN.Fecha)<=#12/31/2010#))
+                ORDER BY Fecha
                 '''.format(ide)
-
+    elif tv == 'hr':
+        if ti == 'SMN':
+            if ti == 'SMN':
+                SQL_q1 = '''
+                    SELECT Fecha, Humedad FROM DatoDiarioSMN
+                    WHERE Estacion = {}
+                    AND (((DatoDiarioSMN.Fecha)>=#1/1/1999#))
+                    AND (((DatoDiarioSMN.Fecha)<=#12/31/2007#))
+                    ORDER BY Fecha
+                    '''.format(ide)
+                SQL_q2 = '''
+                    SELECT Fecha, Hora, Humedad FROM MedicionHorariaSMN
+                    WHERE Estacion = {}
+                    AND (((MedicionHorariaSMN.Fecha)>=#1/1/2008#))
+                    AND (((MedicionHorariaSMN.Fecha)<=#12/31/2010#))
+                    ORDER BY Fecha
+                    '''.format(ide)
 
     # ## End of SQL string to select data
     return SQL_q1, SQL_q2
+
+
+def read_SMN_data(var, tipo, idestacion):
+    '''
+    This function only applies to SMN data that are contained in
+    MedicionHorariaSMN and DatoDiarioSMN tables from the database ora.mdb
+    And only applies for the historical data, because this variables comes from
+    different sources since 01/01/2008.
+    '''
+    drv = '{Microsoft Access Driver (*.mdb, *.accdb)}'
+    pwd = 'pw'
+    db = 'c:/Felix/ORA/base_datos/BaseNueva/ora.mdb'
+    try:
+        #print('Conectando a base: ' + db)
+        cnxn = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(drv, db, pwd))
+    except pyodbc.Error as err:
+        logging.warn(err)
+        print('La base NO esta en: ' + db)
+        print('Si no, corregir codigo read_data_hist_mdb en oramdb_func.py')
+
+    SQL_s1, SQL_s2 = get_hist_sql_string(var, tipo, idestacion)
+    df1 = pd.read_sql_query(SQL_s1, cnxn)
+
+    df2 = pd.read_sql_query(SQL_s2, cnxn)  # De tabla horaria
+    cnxn.close()
+    df2['H'] = df2['Hora'].apply(lambda x: '{0:0>2}'.format(x))
+    df2['D'] = pd.to_datetime(df2['Fecha'].dt.date.astype(str) +\
+                              ' ' + df2['H'].astype(str),
+                              format='%Y-%m-%d %H')
+    df2['D_UTC'] = df2['D'].dt.tz_localize('UTC')
+    df2['D_LOCAL'] = df2['D_UTC'].dt.tz_convert('America/Argentina/Buenos_Aires')
+    if var == 'wnd10m' or var == 'velviento':
+        df3 = df2.groupby([df2['D_LOCAL'].dt.date])['Viento'].mean()
+        df3 = df3.iloc[1::]
+        aux = {'Fecha': df3.index, 'Viento':df3.values}
+        df4 = pd.DataFrame(index=np.arange(0, len(df3)),
+                           columns=['Fecha','Viento'], data=aux)
+        # Transformamos ambas series de km/hora --> m/s
+        df1['Viento'] = (1./3.6) * df1['Viento']
+        df4['Viento'] = (1./3.6) * df4['Viento']
+    elif var == 'hr':
+        df3 = df2.groupby([df2['D_LOCAL'].dt.date])['Humedad'].mean()
+        df3 = df3.iloc[1::]
+        aux = {'Fecha': df3.index, 'Humedad':df3.values}
+        df4 = pd.DataFrame(index=np.arange(0, len(df3)),
+                           columns=['Fecha','Humedad'], data=aux)
+    #
+    df1['Fecha'] = df1['Fecha'].dt.strftime('%Y-%m-%d')
+    df = pd.concat([df1, df4], axis=0, ignore_index=True)
+    df['Fecha'] = pd.to_datetime(df.Fecha)
+    df1 = None
+    df2 = None
+    df3 = None
+    df4 = None
+    #
+    return df
+
+
+def get_latlon_mdb(idestacion):
+    '''
+    Get the Latitude and Longitude of station of database
+    '''
+    drv = '{Microsoft Access Driver (*.mdb, *.accdb)}'
+    pwd = 'pw'
+    db = 'c:/Felix/ORA/base_datos/BaseNueva/ora.mdb'
+    try:
+        #print('Conectando a base: ' + db)
+        cnxn = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(drv, db, pwd))
+    except pyodbc.Error as err:
+        logging.warn(err)
+        print('La base NO esta en: ' + db)
+        print('Si no, corregir codigo read_data_hist_mdb en oramdb_func.py')
+    SQL_E = '''
+            SELECT Latitud, Longitud From Estacion
+            WHERE IdEstacion = {}
+            '''.format(idestacion)
+    df_d = pd.read_sql_query(SQL_E, cnxn)
+    cnxn.close()
+    lat = df_d.Latitud.values
+    lon = df_d.Longitud.values
+
+    return lat, lon
 
 
 def read_data_hist_mdb(var, tipo, idestacion):
@@ -82,13 +186,13 @@ def read_data_hist_mdb(var, tipo, idestacion):
     pwd = 'pw'
     db = 'c:/Felix/ORA/base_datos/BaseNueva/ora.mdb'
     try:
-        print('Conectando a base: ' + db)
+        #print('Conectando a base: ' + db)
         cnxn = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(drv, db, pwd))
     except pyodbc.Error as err:
         logging.warn(err)
         print('La base NO esta en: ' + db)
         print('Si no, corregir codigo read_data_hist_mdb en oramdb_func.py')
-    listVar = ['prate', 'dswsfc', 'tmax', 'tmin', 'wnd10m', 'hr']
+    listVar = ['tmax', 'tmin', 'hr', 'velviento', 'precip', 'radsup']
     if var not in listVar:
         err_msg =''' El tipo de variable: {} NO se encuentra
         en el listado.\n
@@ -110,29 +214,9 @@ def read_data_hist_mdb(var, tipo, idestacion):
         print(listVar)
         print(err_msg)
         exit()
-    if var == 'wnd10m':
-        SQL_s1, SQL_s2 = get_hist_sql_string(var, tipo, idestacion)
-        df1 = pd.read_sql_query(SQL_s1, cnxn)
-        df2 = pd.read_sql_query(SQL_s2, cnxn)
-        cnxn.close()
-        df2['H'] = df2['Hora'].apply(lambda x: '{0:0>2}'.format(x))
-        df2['D'] = pd.to_datetime(df2['Fecha'].dt.date.astype(str) +\
-                                  ' ' + df2['H'].astype(str),
-                                  format='%Y-%m-%d %H')
-        df2['D_UTC'] = df2['D'].dt.tz_localize('UTC')
-        df2['D_LOCAL'] = df2['D_UTC'].dt.tz_convert('America/Argentina/Buenos_Aires')
-        df3 = df2.groupby([df2['D_LOCAL'].dt.date])['Viento'].mean()
-        df3 = df3.iloc[1::]
-        aux = {'Fecha': df3.index, 'Viento':df3.values}
-        df4 = pd.DataFrame(index=np.arange(0, len(df3)), columns=['Fecha','Viento'],
-                           data=aux)
-        df1['Fecha'] = df1['Fecha'].dt.strftime('%Y-%m-%d')
-        df = pd.concat([df1, df4], axis=0, ignore_index=True)
-        df1 = None
-        df2 = None
-        df3 = None
-        df4 = None
-    elif var == 'dswsfc':
+    if var == 'hr' or var == 'velviento':
+        df = read_SMN_data(var, tipo, idestacion)
+    elif var == 'radsup':
         SQL_q, SQL_extra = get_hist_sql_string(var, tipo, idestacion)
         df0 = pd.read_sql_query(SQL_q, cnxn)
         SQL_E = '''

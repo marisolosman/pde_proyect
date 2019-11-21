@@ -332,7 +332,7 @@ def get_values_hr(dic_hr, dic, date):
     salida = {'pressfc_00':y, 'pressfc_06':y, 'pressfc_12':y, 'pressfc_18':y,
               'tmp2m_00':y, 'tmp2m_06':y, 'tmp2m_12':y, 'tmp2m_18':y,
               'q2m_00':y, 'q2m_06':y, 'q2m_12':y, 'q2m_18':y}
-        
+
     if dic_hr:
         for key in dic_hr.keys():  # Loop en variables
             files_i = dic_hr[ key ]
@@ -361,8 +361,12 @@ def get_values_hr(dic_hr, dic, date):
                        in vec_date]
                 date_fun = lambda x: x == d12 or x == d18 or x == d00 or x == d06
                 idate = [date_fun(a) for a in aux]
-                y = np.array(datos[idate])
-                salida[ key + '_' + d_file['ti'][8::] ] = y
+                val_var = np.array(datos[idate])
+                largos = len(val_var)
+                while largos < 4:
+                    val_var = np.append(val_var, np.nan)
+                    largos = len(val_var)
+                salida[ key + '_' + d_file['ti'][8::] ] = val_var
             # End of LOOP archivos
         # Enf of LOOP variables
 
@@ -444,5 +448,5 @@ if __name__ == "__main__":
     print('Hola Main')
     outfo = '../pde_salidas/'
     estac = 'resistencia'
-    vari = 'dswsfc'
+    vari = 'hrmean'
     join_outfiles(outfo, estac, vari)
