@@ -94,7 +94,6 @@ def read_hist_cfsr(l_archivos, miembro_ensamble):
         else:
             print('No se guardo la variable: ', vari)
     # End LOOP
-    #df['hr'] = np.nan
     cols = ['Fecha', 'tmax', 'tmin', 'radsup', 'velviento', 'hr', 'precip']
     df = df[cols]
 

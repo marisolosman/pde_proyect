@@ -191,13 +191,12 @@ def qq_correction(df_m, estacion):
         for index, row in df_m.iterrows():
             ecdf_m, datos_m, ecdf_o, datos_o = get_ecdf(columnas[-1],
                                                         estacion, row.month)
-            sce_data = row[columnas[-1]]  #Last column is data, first is Fecha
+            dato = row[columnas[-1]]  #Last column is data, first is Fecha
             p = ecdf_m(sce_data)
             corr_o = np.nanquantile(datos_o, p, interpolation='linear')
             corr_m = np.nanquantile(datos_m, p, interpolation='linear')
-            corrected_values[index] = corr_o
+            corrected_values[index] = dato + (corr_o - corr_m)
         # End of Loop
-        #print(corrected_values)
         df_out = df_m.loc[:, [columnas[0], columnas[1]]].copy()
         df_out = df_out.assign(corregido=corrected_values)
         df_out.columns = ['Fecha', columnas[-1], columnas[-1] + '_corr']
@@ -234,7 +233,6 @@ def qq_correction_precip(df_m, estacion, tipo):
 
     Ines et al., 2006. 'Bias correction of daily GCM rainfall
     for crop simulation studies'
-
     '''
     import math
     # Gamma Module from scipy
@@ -256,87 +254,55 @@ def qq_correction_precip(df_m, estacion, tipo):
         # Go for each row with data and make the correction according to month
         for index, row in df_m.iterrows():
             pp_prono = row['precip']  # PP a corregir
-            print('PP a corregir: ', pp_prono)
             # Two step correction for each data precipitation
             # #### Preliminary data to work ####
-            ecdf_m, datos_m, ecdf_o, datos_o = get_ecdf('precip',
-                                                        estacion, row.month)
+            ecdf_m, datos_m, ecdf_o, datos_o = get_ecdf('precip', estacion,
+                                                        row.month)
             # Minimum value observed (NON-ZERO)
-            xo_min = np.nanmin(datos_o[datos_o > 0])
-            print('xo_min: ', xo_min)
-            if xo_min <= 0 or math.isnan(xo_min):
-                # if no minimum is found, use 0.1 as default
-                xo_min = limite_menor
+            xo_min, xm_min = calc_min_pp(estacion, row.month)
             # Days with precipitacion
             obs_precdias = datos_o[datos_o > xo_min]
-            # Frequency
-            obs_frecuencia = 1. * obs_precdias.shape[0] / datos_o.shape[0]
-            print('obs_frecuencia: ', obs_frecuencia)
             # Fit a Gamma distribution over days with precipitation
-            obs_gamma = gamma.fit(obs_precdias, loc=0)
-            print('obs_gamma: ', obs_gamma)
+            obs_gamma = gamma.fit(obs_precdias, floc=0)
             obs_cdf = gamma.cdf(np.sort(obs_precdias), *obs_gamma)
             obs_cdf[obs_cdf > cdf_limite] = cdf_limite
-            # #### Correction of Frequency ####
-            pobs = ecdf_o(xo_min)
-            print('pobs: ', pobs)
-            xm_min = np.nanquantile(datos_m, pobs)
-            if xm_min <= 0 or math.isnan(xm_min):
-                # if no minimum is found, use 0.1 as default
-                xm_min = limite_menor
-            print('xm_min: ', xm_min)
             if tipo == 'GG':
                 # OBS --> Gamma / Model --> Gamma
                 if pp_prono < xm_min:
                     pp_corr = 0.
-                    print('PP corregida = ', pp_corr)
-                    print(' ---------- Es menor al minimo --------------')
+                    corrected_values[index] = pp_corr
                 elif math.isnan(pp_prono):
                     pp_corr = np.nan
-                    print('PP corregida = ', pp_corr)
-                    print(' ---------- Es NaN --------------------------')
+                    corrected_values[index] = pp_corr
                 else:
                     # Fit gamma distribution with Model Data
                     mod_precdias = datos_m[datos_m > xm_min]
-                    mod_gamma = gamma.fit(mod_precdias, loc=0)
-                    print('mod_gamma: ', mod_gamma)
+                    mod_gamma = gamma.fit(mod_precdias, floc=0)
                     mod_cdf = gamma.cdf(np.sort(mod_precdias), *mod_gamma)
                     mod_cdf[mod_cdf > cdf_limite] = cdf_limite
                     # Corrected Value is F^-1(F(xi))
                     F_xi = gamma.cdf(pp_prono, *mod_gamma)
-                    #print('F(x_i) = ', F_xi)
-                    Fobs = gamma.ppf(F_xi, *obs_gamma)
-                    #print(u'F^{-1}(F(x_i)) = ', Fobs)
-                    pp_corr = Fobs
-                    print('PP corregida = ', pp_corr)
-                    print(' ---------- ', tipo, ' --------------------------')
-
+                    invF_Fxi = gamma.ppf(F_xi, *obs_gamma)
+                    pp_corr = invF_Fxi
+                    corrected_values[index] = pp_corr
             elif tipo == 'EG':
                 # OBS --> Gamma / Model --> ECDF
                 if pp_prono < xm_min:
                     pp_corr = 0.
-                    print('PP corregida = ', pp_corr)
-                    print(' ---------- Es menor al minimo --------------')
+                    corrected_values[index] = pp_corr
                 elif math.isnan(pp_prono):
                     pp_corr = np.nan
-                    print('PP corregida = ', pp_corr)
-                    print(' ---------- Es NaN --------------------------')
+                    corrected_values[index] = pp_corr
                 else:
                     # Fit gamma distribution with Model Data
                     mod_precdias = datos_m[datos_m > xm_min]
                     ecdf_m_pp = ECDF(mod_precdias)
                     # Corrected Value is F^-1(F(xi))
                     F_xi = ecdf_m_pp(pp_prono)
-                    #print('F(x_i) = ', F_xi)
-                    Fobs = gamma.ppf(F_xi, *obs_gamma)
-                    #print(u'F^{-1}(F(x_i)) = ', Fobs)
-                    pp_corr = Fobs
-                    print('PP corregida = ', pp_corr)
-                    print(' ---------- ', tipo, ' --------------------------')
-
-
+                    invF_Fxi = gamma.ppf(F_xi, *obs_gamma)
+                    pp_corr = invF_Fxi
+                    corrected_values[index] = pp_corr
         # End Of LooP
-        #print(corrected_values)
         df_out = df_m.loc[:, [columnas[0], columnas[1]]].copy()
         df_out = df_out.assign(corregido=corrected_values)
         df_out.columns = ['Fecha', columnas[-1], columnas[-1] + '_corr']
@@ -352,6 +318,28 @@ No estan todas las columnas para hacer correccion Q-Q precipitacion con datos.\n
                   '''
         print(err_txt)
         exit()
+
+
+def calc_min_pp(estacion, mes):
+    '''
+    Calculate values of minimum for precipitation for OBS and model.
+    '''
+    import math
+    limite_menor = 0.1
+    ecdf_m, datos_m, ecdf_o, datos_o = get_ecdf('precip', estacion, mes)
+    # ----- Para Observaciones -----
+    xo_min = np.nanmin(datos_o[datos_o > 0])
+    if xo_min <= 0 or math.isnan(xo_min):
+        # if no minimum is found, use 0.1 as default
+        xo_min = limite_menor
+    # ----- Para el modelo -----
+    pobs = ecdf_o(xo_min)
+    xm_min = np.nanquantile(datos_m, pobs)
+    if xm_min <= 0 or math.isnan(xm_min):
+        # if no minimum is found, use 0.1 as default
+        xm_min = limite_menor
+
+    return xo_min, xm_min
 
 
 if __name__ == '__main__':

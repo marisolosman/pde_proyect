@@ -55,7 +55,7 @@ def get_xlim(variable):
         resultado = [10, 45]
     elif variable == 'prate':
         resultado = [0, 40]
-    elif variable == 'rh':
+    elif variable == 'hr':
         resultado = [0, 100]
     elif variable == 'dswsfc':
         resultado = [0, 50]
@@ -181,7 +181,7 @@ def grafica_ecdf(df_mod, df_o, in_di):
     plt.close(fig)
 
 
-def grafica_distrib_pp(variable, estacion, tipo, mes):
+def grafica_distrib_pp(estacion, tipo, mes):
     '''
     Plots the distribution of precipitation according to
     tipo, where tipo is:
@@ -191,25 +191,25 @@ def grafica_distrib_pp(variable, estacion, tipo, mes):
     #
     from scipy.stats import gamma
     from pdf_func import get_ecdf
+    from pdf_func import calc_min_pp
     from statsmodels.distributions.empirical_distribution import ECDF
     #
-    ecdf_m, datos_m, ecdf_o, datos_o = get_ecdf(variable, estacion, mes)
+    ecdf_m, datos_m, ecdf_o, datos_o = get_ecdf('precip', estacion, mes)
     # Trabajamos datos obs que son con distrib GAMMA
-    xo_min = np.nanmin(datos_o[datos_o > 0])
+    xo_min, xm_min = calc_min_pp(estacion, mes)
     obs_precdias = datos_o[datos_o > xo_min]
     ecdf_o_pp = ECDF(obs_precdias)
     pp_vals0 = np.arange(0, np.nanmax(obs_precdias) + 1.)
     obs_frecuencia = 1. - (1. * obs_precdias.shape[0] / datos_o.shape[0])
-    obs_gamma = gamma.fit(obs_precdias, loc=0)
+    obs_gamma = gamma.fit(obs_precdias, floc=0)
     g1 = gamma.pdf(pp_vals0, *obs_gamma)
     # Trabajamos datos modelo GG o EG
     if tipo == 'GG':
         xm_min = 0.1
         mod_precdias = datos_m[datos_m > xm_min]
-        # print(mod_precdias)
         pp_vals1 = np.arange(0, np.nanmax(mod_precdias) + 1.)
         mod_frecuencia = 1. - (1. * mod_precdias.shape[0] / datos_m.shape[0])
-        mod_gamma = gamma.fit(mod_precdias, loc=0)
+        mod_gamma = gamma.fit(mod_precdias, floc=0)
         g2 = gamma.pdf(pp_vals1, *mod_gamma)
         g3 = gamma.cdf(np.sort(mod_precdias), *mod_gamma)
     elif tipo == 'EG':
@@ -217,8 +217,6 @@ def grafica_distrib_pp(variable, estacion, tipo, mes):
         mod_precdias = datos_m[datos_m > xm_min]
         mod_frecuencia = 1. - (1. * mod_precdias.shape[0] / datos_m.shape[0])
         ecdf_m_pp = ECDF(mod_precdias)
-    print(np.nanmax(obs_precdias) + 1., np.nanmax(mod_precdias) + 1.)
-    print(obs_frecuencia, mod_frecuencia)
     bina = [0.2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]
     # Comenzamos la figura 2 paneles
     sbn.set(style='ticks', palette='muted', color_codes=True,
@@ -228,7 +226,6 @@ def grafica_distrib_pp(variable, estacion, tipo, mes):
     # Histograma Observacion
     ax = axes[0]
     ax.hist(obs_precdias, bins=bina, density=True, rwidth=1)
-    print(bina)
     ax.plot(pp_vals0, g1, 'r-', linewidth=3, alpha=.6)
     ax.set_ylim([0., 0.25])
     ax.set_xlim([0., 200.])
@@ -343,13 +340,13 @@ if __name__ == '__main__':
     vari = 'hr'
     tipo = 'CFS'
     dic0 = {'outf': of + of_p, 'estacion': estac, 'var':vari, 'type': tipo}
-    for m in range(1, 13):
+    for m in range(1, 2):
             dic0['mes'] = m
             n_csv = of + estac + '/percentiles_CFS' + '_' + vari + '.txt'
             df_CFS = pd.read_csv(n_csv, sep=';', decimal=',', header=0).drop(['Unnamed: 0'],axis=1)
             n_csv = of + estac + '/percentiles_OBS' + '_' + vari + '.txt'
             df_o = pd.read_csv(n_csv, sep=';', decimal=',', header=0).drop(['Unnamed: 0'],axis=1)
-            grafica_percentiles(df_CFS, df_o, dic0)
+            #grafica_percentiles(df_CFS, df_o, dic0)
     # . . . . . . . . . . . . . . . . . . . . . . . .
     # Datos del modelo
     of = './datos/'
@@ -364,11 +361,11 @@ if __name__ == '__main__':
     dic1 = {'outfo': of, 'estacion': estac, 'iest': idest, 't_estac':'SMN',
             'var':vari, 'type':'OBS'}
     for m in range(1, 13):
-        #grafica_distrib_pp(vari, estac, 'EG', m)
+        grafica_distrib_pp(estac, 'GG', m)
+        grafica_distrib_pp(estac, 'EG', m)
         dic0['mes'] = m
         n_csv = of + estac + '/data_final' + '_' + vari + '.txt'
         df_CFS = pd.read_csv(n_csv, sep=';', decimal=',',
                              header=0).drop(['Unnamed: 0'],axis=1)
-        print(df_CFS.head())
         df_OBS = calc_pdf_OBS(dic1)
-        grafica_ecdf(df_CFS, df_OBS, dic0)
+        #grafica_ecdf(df_CFS, df_OBS, dic0)
