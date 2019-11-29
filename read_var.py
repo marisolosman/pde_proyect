@@ -38,12 +38,19 @@ var    = sys.argv[2]  # Segundo argumento variable
 print(yy, var)
 # Other options: tmax, tmin, dswsfc,
 #                hr, wnd10m
-if var == 'hr':  # Si se calcula HR hay que elegir que calcular:
-    operacion = 'min'  # programados: 'min', 'max' y 'mean'
+if var == 'hrmean':  # Si se calcula HR hay que elegir que calcular:
+    var = 'hr'
+    operacion = 'mean'  # programados: 'min', 'max' y 'mean'
+elif var == 'hrmin':
+    var = 'hr'
+    operacion = 'min'
+elif var == 'hrmax':
+    var = 'hr'
+    operacion = 'max'
 #
-lat_e = [-27.45]  # Test con estacion Resistencia (Chaco, SMN)
-lon_e = [-59.05]
-n_est = ['resistencia']
+lat_e = [-34.55]  # Test con estacion Resistencia (Chaco, SMN)
+lon_e = [-60.92]
+n_est = ['junin']
 
 outfolder = '../pde_salidas/'
 os.makedirs(outfolder, exist_ok=True)
@@ -124,3 +131,4 @@ df[sel_col] = df[sel_col].apply(pd.to_numeric, errors='ignore')
 df.to_csv(n_file, sep=';', float_format='%.2f', decimal=',',
           date_format='%Y-%m-%d')
 print("--- %s seconds ---" % (time.time() - start_time))
+
