@@ -323,11 +323,13 @@ def read_soil_parameter(idestacion, cultivo, tipo_bh):
             lim_desec = 1.
         alm_min = lim_desec * out_dict['PMP']
         ccd = out_dict['CC'] - alm_min
+        umbral_perc = out_dict['PMP'] + 0.5*agua_util
         # Save new parameters in output
         out_dict['AU'] = agua_util
         out_dict['LD'] = lim_desec
         out_dict['ALM_MIN'] = alm_min
         out_dict['CCD'] = ccd
+        out_dict['UI'] = umbral_perc
 
         return out_dict
     else:
@@ -390,6 +392,24 @@ def read_fenologia(idestacion, cultivo):
         print('No se realiza en la estacion: ' + idestacion)
         print( '##################################')
         exit()
+
+
+def get_medias_ETP(idestacion):
+    '''
+    '''
+    try:
+        cnxn = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(drv, db, pwd))
+    except pyodbc.Error as err:
+        logging.warn(err)
+        print('La base NO esta en: ' + db)
+        print('Si no, corregir codigo read_data_hist_mdb en oramdb_func.py')
+    SQL = '''
+        SELECT * FROM MediasETPporEstacion
+        WHERE Estacion = {}
+        '''.format(idestacion)
+    tabla = pd.read_sql_query(SQL, cnxn)
+    
+    return tabla
 
 
 if __name__ == "__main__":

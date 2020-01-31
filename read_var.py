@@ -119,7 +119,7 @@ else:
     elif var == 'dswsfc':
         fvar = 'radsup'
     elif var == 'wnd10m':
-        fvar = velviento
+        fvar = 'velviento'
     n_file = outfolder + n_est[it] + '/data_' + fvar +\
             '_' + str(fval[0].year) + '.txt'
 
@@ -131,4 +131,3 @@ df[sel_col] = df[sel_col].apply(pd.to_numeric, errors='ignore')
 df.to_csv(n_file, sep=';', float_format='%.2f', decimal=',',
           date_format='%Y-%m-%d')
 print("--- %s seconds ---" % (time.time() - start_time))
-

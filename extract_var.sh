@@ -5,10 +5,10 @@ conda activate py37
 python --version
 
 
-for var in 'tmax' 'tmin' 'dswsfc' 'wnd10m' 'prate' 'hrmean' 
+for var in 'tmax' 'tmin' 'dswsfc' 'wnd10m' 'prate' 'hrmean'
 do
-    yy=2002
-    while [ "$yy" -lt 2011 ] 
+    yy=1999
+    while [ "$yy" -lt 2011 ]
     do
 	python /home/felix.carrasco/pde_proyect/read_var.py $yy $var &
 	pid=$!

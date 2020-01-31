@@ -197,7 +197,9 @@ def grafica_distrib_pp(estacion, tipo, mes):
     ecdf_m, datos_m, ecdf_o, datos_o = get_ecdf('precip', estacion, mes)
     # Trabajamos datos obs que son con distrib GAMMA
     xo_min, xm_min = calc_min_pp(estacion, mes)
-    obs_precdias = datos_o[datos_o > xo_min]
+    d_o_pp = np.logical_and(datos_o > xo_min, ~np.isnan(datos_o))
+    obs_precdias = datos_o[d_o_pp]
+    print(obs_precdias)
     ecdf_o_pp = ECDF(obs_precdias)
     pp_vals0 = np.arange(0, np.nanmax(obs_precdias) + 1.)
     obs_frecuencia = 1. - (1. * obs_precdias.shape[0] / datos_o.shape[0])
@@ -206,7 +208,8 @@ def grafica_distrib_pp(estacion, tipo, mes):
     # Trabajamos datos modelo GG o EG
     if tipo == 'GG':
         xm_min = 0.1
-        mod_precdias = datos_m[datos_m > xm_min]
+        d_m_pp = np.logical_and(datos_m > xm_min, ~np.isnan(datos_m))
+        mod_precdias = datos_m[d_m_pp]
         pp_vals1 = np.arange(0, np.nanmax(mod_precdias) + 1.)
         mod_frecuencia = 1. - (1. * mod_precdias.shape[0] / datos_m.shape[0])
         mod_gamma = gamma.fit(mod_precdias, floc=0)
@@ -214,7 +217,8 @@ def grafica_distrib_pp(estacion, tipo, mes):
         g3 = gamma.cdf(np.sort(mod_precdias), *mod_gamma)
     elif tipo == 'EG':
         xm_min = 0.1
-        mod_precdias = datos_m[datos_m > xm_min]
+        d_m_pp = np.logical_and(datos_m > xm_min, ~np.isnan(datos_m))
+        mod_precdias = datos_m[d_m_pp]
         mod_frecuencia = 1. - (1. * mod_precdias.shape[0] / datos_m.shape[0])
         ecdf_m_pp = ECDF(mod_precdias)
     bina = [0.2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]
@@ -328,7 +332,35 @@ def grafica_dispersion_etp(etp_o, etp_m, estacion, t_dato_m):
         exit()
 
 
-
+def grafico_KC(x, d_bis, d_nbis, z0, z1, y, x_label):
+    '''
+    '''
+    fig, ax = plt.subplots(nrows=1, ncols=1, facecolor='white')
+    ax.plot(d_bis, z0, '-', color='#1aba02', ms=3., alpha=0.8, label='bisiesto')
+    ax.plot(d_nbis, z1, '-.', color='#3f12e3', ms=2.5, alpha=0.7, label='no bisiesto')
+    ax.plot(x, y, 'o', color='#ed2026', ms=5.5, label='Valores Originales')
+    # eje X
+    ax.set_xticks(x)
+    txt_dict = {'fontsize':7, 'verticalalignment': 'top','horizontalalignment': 'right'}
+    ax.set_xticklabels(x_label, rotation=45, fontdict=txt_dict)
+    ax.xaxis.grid(True, linestyle='--')
+    # Set ticks on both sides of axes on
+    ax.tick_params(axis='x', bottom=True, top=False, labelbottom=True, labeltop=False)
+    # Rotate and align top ticklabels
+    axT = ax.twiny()
+    axT.set_xlim(ax.get_xlim())
+    axT.tick_params(axis='x', bottom=False, top=True, labelbottom=False, labeltop=True)
+    axT.set_xticks(x)
+    axT.set_xticklabels(x, rotation=45, fontsize=7)
+    # Eje y
+    ax.set_yticks(y)
+    ax.yaxis.grid(True, linestyle='--')
+    # Leyenda
+    ax.legend(loc='upper right', fancybox=True, prop={'size': 10},
+              handletextpad=0.1)
+    bbox_props = dict(boxstyle='round', fc='w', ec='0.5', alpha=0.9)
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == '__main__':
     # ----------------

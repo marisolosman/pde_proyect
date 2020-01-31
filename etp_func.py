@@ -65,7 +65,7 @@ def calculaRSdeHeliofania(Heliofania, omega_s, Ra):
 
     return r_s
 
-def CalcularETPconDatos(df, Latitud):
+def CalcularETPconDatos(df, idestacion):
     '''
     Using the columns of the DataFrame, calculates a column with the etp
     using the FAO formula.
@@ -73,9 +73,14 @@ def CalcularETPconDatos(df, Latitud):
     'Fecha', 'tmax', 'tmin', 'radsup', 'velviento', 'hr', 'precip'
     if any of these is not present, throws an error message and stop
     '''
+    from oramdb_func import get_latlon_mdb
+
+    # ----------------------------------
+
     list1 = df.columns
     list2 = ['Fecha', 'tmax', 'tmin', 'radsup', 'velviento', 'hr']
     result =  all(elem in list1  for elem in list2)
+    Latitud, longi = get_latlon_mdb(idestacion)
     if result:
         print(' ################# Calculando ETP #################')
         a_juliano = np.array(df['Fecha'].dt.strftime('%j').values,
@@ -109,8 +114,10 @@ def CalcularETPconDatos(df, Latitud):
         ETP = (n1/n2).to_numpy()
         ETP[ETP < 0.] = 0.
         df = df.assign(ETP=ETP)
+        df = df.assign(i_ETPm=np.isnan(df.ETP.values))
+        df0 = man_Falt_ETP(df, idestacion)
 
-        return df
+        return df0
 
     else :
         print(list1)
@@ -124,3 +131,30 @@ def CalcularETPconDatos(df, Latitud):
                   '''
         print(err_txt)
         exit()
+
+
+def man_Falt_ETP(d_etp, idestacion):
+    '''
+    This function give the Monthly mean to dates where there was no possible
+    to calculate the ETP (in case is missing).
+    '''
+    import datetime as dt
+    from oramdb_func import get_medias_ETP
+    from extras_func import clas_decada
+
+    t_etp = get_medias_ETP(idestacion)
+    # Get index of NaN Values for ETP
+    i_nan = np.isnan(d_etp.ETP.values)
+    r_i, r_d = clas_decada(d_etp['Fecha'].dt.to_pydatetime())
+    d_etp = d_etp.assign(mes=d_etp['Fecha'].dt.month)
+    d_etp = d_etp.assign(decada=r_i)
+    for m1 in np.arange(1, 13):
+        for de1 in np.arange(1, 4):
+            i_deca = np.logical_and(d_etp.mes == m1, d_etp.decada == de1)
+            i_deca_t = np.logical_and(t_etp.Mes == m1, t_etp.Decada == de1)
+            valor_etp = t_etp.loc[i_deca_t, 'ETPMedia'].values[0]
+            d_etp.loc[i_nan & i_deca, 'ETP'] = valor_etp
+
+    d_etp = d_etp.drop(columns=['mes', 'decada'])
+
+    return d_etp

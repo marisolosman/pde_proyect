@@ -192,7 +192,7 @@ def qq_correction(df_m, estacion):
             ecdf_m, datos_m, ecdf_o, datos_o = get_ecdf(columnas[-1],
                                                         estacion, row.month)
             dato = row[columnas[-1]]  #Last column is data, first is Fecha
-            p = ecdf_m(sce_data)
+            p = ecdf_m(dato)
             corr_o = np.nanquantile(datos_o, p, interpolation='linear')
             corr_m = np.nanquantile(datos_m, p, interpolation='linear')
             corrected_values[index] = dato + (corr_o - corr_m)
