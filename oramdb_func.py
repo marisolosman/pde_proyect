@@ -326,10 +326,10 @@ def read_soil_parameter(idestacion, cultivo, tipo_bh):
         umbral_perc = out_dict['PMP'] + 0.5*agua_util
         # Save new parameters in output
         out_dict['AU'] = agua_util
-        out_dict['LD'] = lim_desec
-        out_dict['ALM_MIN'] = alm_min
-        out_dict['CCD'] = ccd
-        out_dict['UI'] = umbral_perc
+        out_dict['LD'] = lim_desec  # Limite desecamiento
+        out_dict['ALM_MIN'] = alm_min  # ALM Minimo
+        out_dict['CCD'] = ccd  # Cap. Campo Disponible
+        out_dict['UI'] = umbral_perc  # Umbral de Percolacion
 
         return out_dict
     else:
@@ -408,7 +408,7 @@ def get_medias_ETP(idestacion):
         WHERE Estacion = {}
         '''.format(idestacion)
     tabla = pd.read_sql_query(SQL, cnxn)
-    
+
     return tabla
 
 

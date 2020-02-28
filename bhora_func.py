@@ -105,12 +105,18 @@ def run_bh_ora(datos, idestacion, cultivo, tipo_bh, **kwargs):
     d_bis, kc_bis, d_nbis, kc_nbis = get_KC(idestacion, cultivo)
     # ----- Condiciones Iniciales
     # Esta fecha debiera ser un dia antes de la fecha de los datos
-    fecha_i = dt.datetime(1998,12,31)
+    if kwargs['fecha_inicial']:
+        fecha_i = kwargs['ini_date']
+        print('Fecha Inicial: ', fecha_i)
+    else:
+        fecha_i = dt.datetime(1998,12,31)
+        print('Fecha inicial', fecha_i)
     ALM0, EXC0, PER0, ESC0 = get_initial_condition(fecha_i)
     # Colocamos memoria para guardar variables asociadas al BH
     # 0: es condicion inicial
     Nt = len(datos) + 1
     ALM, EXC, PER, ESC, ETC, ALMR, ETR = var_to_save(Nt, ALM0, EXC0, PER0, ESC0)
+    datos.reset_index(drop=True, inplace=True)
     # --- Comenzamos a iterar en las fechas para las que hay que calcular el BH
     for d in np.arange(1, Nt):  # d goes for data to save
         # Datos necesarios para calculos:
@@ -153,7 +159,7 @@ def run_bh_ora(datos, idestacion, cultivo, tipo_bh, **kwargs):
         if DIF > 0.:
             ALM[d] = ALM[d - 1] + EXC[d - 1] + PPE - ETC[d] - PER[d]
             if ALM[d] > ds['CCD']:
-                EXC[d] = ds['CCD'] - ALM[d]
+                EXC[d] = ALM[d] - ds['CCD']
                 ALM[d] = ds['CCD']
         else:
             if kwargs['debug']:
@@ -161,7 +167,7 @@ def run_bh_ora(datos, idestacion, cultivo, tipo_bh, **kwargs):
             aux = np.exp( (ds['CCD']**(-1) + 1.29*ds['CCD']**(-1.88)) * DIF )
             ALM[d] = (ALM[d - 1] + EXC[d - 1]) * aux - PER[d]
             if ALM[d] > ds['CCD']:
-                EXC[d] = ds['CCD'] - ALM[d]
+                EXC[d] = ALM[d] - ds['CCD']
                 ALM[d] = ds['CCD']
         if kwargs['debug']:
             print('DIF: ', DIF, 'ALM: ', ALM[d], 'EXC: ', EXC[d])
@@ -174,6 +180,7 @@ def run_bh_ora(datos, idestacion, cultivo, tipo_bh, **kwargs):
             print('----------------------------------------------')
 
     df = pd.DataFrame(index=np.arange(0,Nt))
+    df = df.assign(Fecha=datos.Fecha)
     df = df.assign(ALM=ALM)
     df = df.assign(EXC=EXC)
     df = df.assign(PER=PER)
@@ -181,6 +188,8 @@ def run_bh_ora(datos, idestacion, cultivo, tipo_bh, **kwargs):
     df = df.assign(ETC=ETC)
     df = df.assign(ALMR=ALMR)
     df = df.assign(ETR=ETR)
+
+    return df
 
 
 if __name__ == '__main__':

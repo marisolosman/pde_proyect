@@ -14,9 +14,11 @@ Plot comparisons/calculate statistics to evaluate.
 '''
 import glob
 import os
+import time
 
 import numpy as np
 import pandas as pd
+import datetime as dt
 
 from etp_func import CalcularETPconDatos
 from oramdb_func import get_latlon_mdb
@@ -36,11 +38,26 @@ def gen_qq_corrected_df(df, estacion):
     Generates the dataframe and returned it
     '''
     #
-    variables = ['Fecha', 'tmax', 'tmin', 'radsup', 'velviento', 'hr']
-    corr_var = {'Fecha': df.Fecha}
-    for var in variables[1::]:
+    variables = ['Fecha', 'precip', 'tmax', 'tmin', 'radsup', 'velviento', 'hr']
+    corr_var = {'Fecha': df.Fecha, 'precip': df.precip}
+    for var in variables[2::]:
          df_corr = qq_correction(df.loc[:, ['Fecha', var]], estacion)
          corr_var[var] = df_corr[var + '_corr'].values
+    resultado = pd.DataFrame(columns=variables, data=corr_var)
+
+    return resultado
+
+def gen_qq_corrected_precip(df, estacion):
+    '''
+    This function calibrate and returns data to calculate BH, ie:
+    Fecha, precip, ETP
+    '''
+    variables = ['Fecha', 'precip', 'ETP']
+    corr_var = {'Fecha': df.Fecha, 'ETP': df.ETP}
+    pp_corre = qq_correction_precip(df.loc[:, ['Fecha', 'precip']],
+                                    estacion, 'GG')
+    corr_var['precip'] = pp_corre['precip_corr'].values
+
     resultado = pd.DataFrame(columns=variables, data=corr_var)
 
     return resultado
@@ -48,8 +65,10 @@ def gen_qq_corrected_df(df, estacion):
 #
 # ------  Start the script ---------------
 # $$$ Initial data to work
+start = time.time()
+
 list_files = glob.glob('./datos/resistencia/data_final_*.txt')
-ens_mem = 2
+ens_mem = 4
 tipo_est = 'SMN'
 id_est = '107'
 estacion = 'resistencia'
@@ -59,8 +78,18 @@ year_test = 2007  # Use data from this year to test
 # Datos a utilizar
 ini_m = read_hist_cfsr(list_files, ens_mem)
 ini_o = read_hist_obs(tipo_est, id_est)
-df_m = ini_m.loc[ini_m.Fecha < '01/01/2009']
-df_o = ini_o.loc[ini_o.Fecha < '01/01/2009']
+index_fecha_m = np.logical_and(ini_m.Fecha >= '06/01/'+str(year_test),
+                               ini_m.Fecha <= '06/30/'+str(year_test))
+index_fecha_o = np.logical_and(ini_o.Fecha >= '06/01/'+str(year_test),
+                               ini_o.Fecha <= '06/30/'+str(year_test))
+df_m = ini_m.loc[index_fecha_m]
+df_o = ini_o.loc[index_fecha_o]
+
+fecha_inicial = df_m['Fecha'].iloc[0] - dt.timedelta(days=1)
+yr_i = fecha_inicial.year
+mo_i = fecha_inicial.month
+dy_i = fecha_inicial.day
+
 # Calculamos ETP para datos historicos observados y modelados
 etp_o = CalcularETPconDatos(df_o, id_est)
 #print(etp_o.head())
@@ -72,44 +101,24 @@ etp_mc = CalcularETPconDatos(df_mc, id_est)
 #print(etp_mc.head())
 
 # Calculamos BH para estos datos:
-kwargs = {'debug':False}
+kwargs = {'debug':False, 'fecha_inicial': True, 'ini_date':dt.datetime(yr_i, mo_i, dy_i)}
 datos_bh_o = etp_o.loc[:, ['Fecha', 'precip', 'ETP']]
+# BH con Observaciones
 dbh_o = run_bh_ora(datos_bh_o, id_est, cultivo, tipo_bh, **kwargs)
 datos_bh_m = etp_m.loc[:, ['Fecha', 'precip', 'ETP']]
+# BH con datos de Modelo
 dbh_m = run_bh_ora(datos_bh_m, id_est, cultivo, tipo_bh, **kwargs)
 datos_bh_mc = etp_mc.loc[:, ['Fecha', 'precip', 'ETP']]
+# BH con datos de modelo corregido para calcular ETP
 dbh_mc = run_bh_ora(datos_bh_mc, id_est, cultivo, tipo_bh, **kwargs)
-print(datos_bh_o.head())
-print(datos_bh_m.head())
-print(datos_bh_mc.head())
-#
-# # Seleccionamos los datos a utilizar
-# index_fecha_hist_m = np.logical_or(df_m.Fecha < '01/01/'+str(year_test),
-#                                    df_m.Fecha > '31/12/'+str(year_test))
-# index_fecha_test_m = np.logical_and(df_m.Fecha >= '01/01/'+str(year_test),
-#                                     df_m.Fecha <= '31/12/'+str(year_test))
-# index_fecha_hist_o = np.logical_or(df_o.Fecha < '01/01/'+str(year_test),
-#                                    df_o.Fecha > '31/12/'+str(year_test))
-# index_fecha_test_o = np.logical_and(df_o.Fecha >= '01/01/'+str(year_test),
-#                                     df_o.Fecha <= '31/12/'+str(year_test))
-# #
-# df_mh = df_m.loc[index_fecha_hist_m]
-# print(df_mh.tail())
-# df_oh = df_o.loc[index_fecha_hist_o]
-# print(df_oh.tail())
-# df_mt = df_m.loc[index_fecha_test_m]
-# df_ot = df_o.loc[index_fecha_test_o]
-# print(df_mt.head())
-# print(df_ot.head())
-# etp_o = CalcularETPconDatos(df_ot, id_est)
-# print(etp_o.head())
-# etp_m = CalcularETPconDatos(df_mt, id_est)
-# print(etp_m.head())
-# df_mt.reset_index(drop=True, inplace=True)
-# df_mc = gen_qq_corrected_df(df_mt, estacion)
-# print(df_mc.head(), df_mc.dtypes)
-# etp_mc = CalcularETPconDatos(df_mc, id_est)
-# print(etp_mc.head())
+# BH con datos de modelo corregido para calcular ETP y PP
+datos_bh_mcpp = gen_qq_corrected_precip(etp_mc, estacion)
+dbh_mc_pp = run_bh_ora(datos_bh_mcpp, id_est, cultivo, tipo_bh, **kwargs)
+
+
+end = time.time()
+print(end - start)
+
 # ------ ## --------- ## --------- ## ---------- ## -----
 # ------ Graficamos dispersion entre ETP ----------------
 #grafica_dispersion_etp(etp_o, etp_m, estacion, 'modelo')

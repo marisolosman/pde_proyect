@@ -112,7 +112,9 @@ def CalcularETPconDatos(df, idestacion):
         n1 = 0.408*Pend*RN + GAMMA*(900. / (Temp + 273.))*viento2*(ES - EA)
         n2 = Pend + GAMMA * (1. + 0.34 * viento2)
         ETP = (n1/n2).to_numpy()
-        ETP[ETP < 0.] = 0.
+        in_etp = np.array([e < 0. if ~np.isnan(e) else False for e in ETP],
+                           dtype=bool)
+        ETP[ in_etp ] = 0.
         df = df.assign(ETP=ETP)
         df = df.assign(i_ETPm=np.isnan(df.ETP.values))
         df0 = man_Falt_ETP(df, idestacion)
