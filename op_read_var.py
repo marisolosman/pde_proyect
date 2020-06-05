@@ -266,6 +266,7 @@ else:
         elif var == 'prate':
             fvar = 'precip'
             resu = datos.resample(rule='24H', closed='left', base=9).apply(calc_precip)
+            resu.index = resu.index.map(lambda t: t.replace(hour=0))
         elif var == 'dswsfc':
             fvar = 'radsup'
             resu = datos.resample(rule='1D').apply(calc_radsup)
