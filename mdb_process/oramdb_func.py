@@ -5,6 +5,10 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 
+#import sys
+#sys.path.append('../bh_process/')
+from etp_func import (calcularDr, calcularOmegaS, calcularRa,
+                      calcularDelta, calculaRSdeHeliofania)
 '''
 Set de funciones para interactuar con la base de datos ORA: ora.mdb
 Dado que para este proyecto se trabaja a nivel de Estacion
@@ -223,16 +227,16 @@ def read_data_hist_mdb(var, tipo, idestacion):
         # Calcular dia Juliano de Columna Fecha
         df0['Juliano'] = df0['Fecha'].dt.strftime('%j')
         # -- Comenzamos transformacion ---
-        import etp_func
+
         # ..................................
         a_juliano = np.array(df0.Juliano.values, dtype=np.float64)
-        df0['dr'] = etp_func.calcularDr(a_juliano)
-        df0['delta'] = etp_func.calcularDelta(a_juliano)
-        df0['omega'] = etp_func.calcularOmegaS(df_d.Latitud.values,\
+        df0['dr'] = calcularDr(a_juliano)
+        df0['delta'] = calcularDelta(a_juliano)
+        df0['omega'] = calcularOmegaS(df_d.Latitud.values,\
                                                df0.delta)
-        df0['Ra'] = etp_func.calcularRa(a_juliano, df_d.Latitud.values,\
+        df0['Ra'] = calcularRa(a_juliano, df_d.Latitud.values,\
                                         df0.delta, df0.omega)
-        df0['Rs'] = etp_func.calculaRSdeHeliofania(df0.Heliofania.values,\
+        df0['Rs'] = calculaRSdeHeliofania(df0.Heliofania.values,\
                                                    df0.omega, df0.Ra);
         df = df0[['Fecha', 'Rs']]
     else:
@@ -413,10 +417,14 @@ def get_medias_ETP(idestacion):
 
 
 if __name__ == "__main__":
+    from bhora_func import get_KC
+    # ------
     idestacion = '107'
     cultivo = 'S1-VII'
     tipo_bh = 'profundo'
+    kwargs = {'plot': True}
     ds = read_soil_parameter(idestacion, cultivo, tipo_bh)
     print(ds)
     fen = read_fenologia(idestacion, cultivo)
     print(fen)
+    get_KC(idestacion, cultivo, **kwargs)

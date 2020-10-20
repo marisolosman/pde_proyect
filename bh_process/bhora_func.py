@@ -14,8 +14,14 @@ def get_initial_condition(date_i):
     EXC0 = ci_0['exceso'].values[0]
     PER0 = ci_0['per'].values[0]
     ESC0 = ci_0['esc'].values[0]
+    ETP0 = ci_0['etp'].values[0]
+    ETR0 = ci_0[u'etr (evapotranspiración real)'].values[0]
+    ETC0 = ci_0['etc'].values[0]
+    ALMR0 = ci_0['alm real'].values[0]
+    PP0 = ci_0[u'precipitación'].values[0]
 
-    return ALM0, EXC0, PER0, ESC0
+    #
+    return ALM0, EXC0, PER0, ESC0, ETP0, ETR0, ETC0, PP0, ALMR0
 
 
 def get_KC(idestacion, cultivo, **kwargs):
@@ -60,7 +66,7 @@ def get_KC(idestacion, cultivo, **kwargs):
     return d_bis, kc_bis, d_nbis, kc_nbis
 
 
-def var_to_save(Nt, A0, E0, P0, ES0):
+def var_to_save(Nt, A0, E0, P0, ES0, ET0, AR0, ER0):
     '''
     '''
     ALM = np.empty(Nt)
@@ -76,11 +82,14 @@ def var_to_save(Nt, A0, E0, P0, ES0):
     ESC[0] = ES0
     ESC[1::] = np.nan
     ETC = np.empty(Nt)
-    ETC[:] = np.nan
+    ETC[0] = ET0
+    ETC[1::] = np.nan
     ALMR = np.empty(Nt)
-    ALMR[:] = np.nan
+    ALMR[0] = AR0
+    ALMR[1::] = np.nan
     ETR = np.empty(Nt)
-    ETR[:] = np.nan
+    ETR[0] = ER0
+    ETR[1::] = np.nan
 
     return ALM, EXC, PER, ESC, ETC, ALMR, ETR
 
@@ -109,18 +118,26 @@ def run_bh_ora(datos, idestacion, cultivo, tipo_bh, **kwargs):
         fecha_i = kwargs['ini_date']
         print('Fecha Inicial: ', fecha_i)
     else:
-        fecha_i = dt.datetime(1998,12,31)
-        print('Fecha inicial', fecha_i)
-    ALM0, EXC0, PER0, ESC0 = get_initial_condition(fecha_i)
+        print('ERROR: No se entrego fecha inicial para Balance.')
+        exit()
+    ALM0, EXC0, PER0, ESC0, ETP0, ETR0, ETC0, PP0, ALMR0 = get_initial_condition(fecha_i)
+    if kwargs['debug']:
+        print('ALM0: ', ALM0, 'EXC0: ', EXC0, 'PER0: ', PER0, 'ESC0: ', ESC0,
+              'ETP0: ', ETP0, 'PP0: ', PP0)
     # Colocamos memoria para guardar variables asociadas al BH
     # 0: es condicion inicial
     Nt = len(datos) + 1
-    ALM, EXC, PER, ESC, ETC, ALMR, ETR = var_to_save(Nt, ALM0, EXC0, PER0, ESC0)
+    ALM, EXC, PER, ESC, ETC, ALMR, ETR = var_to_save(Nt, ALM0, EXC0, PER0,
+                                                     ESC0, ETC0, ALMR0, ETR0)
+    c_i = {'Fecha': fecha_i, 'ETP': ETP0, 'precip': PP0 }
+    datos = datos.append(c_i, ignore_index=True)
+    datos = datos.sort_values(by=['Fecha'])
     datos.reset_index(drop=True, inplace=True)
+    #print(datos)
     # --- Comenzamos a iterar en las fechas para las que hay que calcular el BH
     for d in np.arange(1, Nt):  # d goes for data to save
         # Datos necesarios para calculos:
-        fecha = datos.loc[d-1, 'Fecha']
+        fecha = datos.loc[d, 'Fecha']
         juliano = int(fecha.strftime('%j'))
         if kwargs['debug']:
             print('Fecha ', fecha, 'Juliano: ', juliano)
@@ -133,7 +150,7 @@ def run_bh_ora(datos, idestacion, cultivo, tipo_bh, **kwargs):
         if kwargs['debug']:
             print('CI: ', CI, 'Percolacion: ', PER[d])
         # ----- Calculos escorrentia
-        PP = np.nanmax([datos.loc[d - 1, 'precip'], 0])
+        PP = np.nanmax([datos.loc[d, 'precip'], 0])
         SUM = PP - EXC[d - 1]
         if SUM > 0.:
             ESC[d] = (ds['CE']**2)*SUM*np.exp(-CI/SUM)
@@ -150,7 +167,7 @@ def run_bh_ora(datos, idestacion, cultivo, tipo_bh, **kwargs):
             kc = kc_bis[d_bis == juliano]
         else:
             kc = kc_nbis[d_nbis == juliano]
-        ETP = datos.loc[d - 1, 'ETP']
+        ETP = datos.loc[d, 'ETP']
         ETC[d] = kc*ETP
         if kwargs['debug']:
             print('KC: ', kc, 'ETP: ', ETP, 'ETC: ', ETC[d])

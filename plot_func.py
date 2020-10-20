@@ -2,12 +2,18 @@ import os
 import glob
 import pandas as pd
 import numpy as np
+import datetime as dt
+
 
 import seaborn as sbn
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
+from pandas.plotting import register_matplotlib_converters
+
 from statsmodels.distributions.empirical_distribution import ECDF
+
+register_matplotlib_converters()
 
 def defi_title(variable, lang):
     '''
@@ -361,6 +367,68 @@ def grafico_KC(x, d_bis, d_nbis, z0, z1, y, x_label):
     bbox_props = dict(boxstyle='round', fc='w', ec='0.5', alpha=0.9)
     plt.tight_layout()
     plt.show()
+
+
+def plot_check_prono(almr, idest, nestacion, cultivo, tipo_bh):
+    '''
+    Function to review results from operation BH prognostic
+    almr: Dataframe with the 30 prognostic variable (index has dates)
+    ides: Id of station to retrieve data from correspondant soil.
+    '''
+    from oramdb_func import read_soil_parameter
+    import matplotlib.dates as mdates
+
+    # datos reales
+    infile = '../pde_salidas/BH-ORA/balance_RESIS_FL40-45_S1-VII_NORTE.xls'
+
+    df = pd.read_excel(infile, sheet_name='DatosDiarios')
+    xo = df.Fecha
+    yo = df['alm real'].values
+    myfmt = mdates.DateFormatter('%d/%m')
+    soil_p = read_soil_parameter(idest, cultivo, tipo_bh)
+    x = almr.index
+    y = almr.to_numpy()
+    y_ave = np.nanmean(y, axis=1)
+    x0 = x[1] - dt.timedelta(days=10)
+    x1 = x[-1] + dt.timedelta(days=1)
+    # Comenzamos con el grafico.
+    fig, ax = plt.subplots(nrows=1, ncols=1, facecolor='white', figsize=(9,6))
+    # --- Pronosticos
+    ax.plot(x, y, color='#c7e9c0')
+    ax.plot(x, y_ave, color='#006d2c', label='Promedio')
+    # Valor real
+    ax.plot(xo, yo, color='black', label='Observado')
+    # --- Caracteristicas suelo
+    ax.plot([x0, x1], soil_p['CC']*np.ones((2,1)), color='#6baed6')
+    ax.plot([x0, x1], soil_p['PMP']*np.ones((2,1)), color='#de2d26')
+    # --- Eje x
+    ax.set_xlim([x0, x1])
+    ax.set_xticks([x0, x[1], x[1] + dt.timedelta(days=10),\
+                   x[1] + dt.timedelta(days=20), x[-1]])
+    ax.xaxis.set_major_formatter(myfmt)
+    ax.xaxis.set_minor_locator(mdates.DayLocator())
+    ax.xaxis.grid(b=True, which='major', color='#bdbdbd', linestyle='--' )
+    # --- Eje y
+    ax.set_ylim([0, 1.2*soil_p['CC']])
+    # --- Titulo
+    ax.set_title('Seguimiento de reserva de agua en el suelo',
+                 fontdict={'fontweight':'bold'})
+    ax.text(x0 + dt.timedelta(days=1), 1.1*soil_p['CC'],
+            'Resistencia - Soja primera (VII)', style='italic', fontsize=8,
+            bbox={'facecolor': 'white', 'alpha': 0.5, 'pad': 10})
+    # --- Leyenda
+    ax.legend(loc='lower right', fancybox=True, prop={'size': 10},
+              handletextpad=0.1)
+    bbox_props = dict(boxstyle='round', fc='w', ec='0.5', alpha=0.9)
+    plt.tight_layout()
+    # Se guarda la figura
+    outfolder = './datos/' + nestacion + '/bh/'
+    os.makedirs(outfolder, exist_ok=True)
+    fstr = x[1].strftime('%Y%m%d')
+    fgnm =  outfolder + 'bh_prono_' + fstr + '_' + cultivo + '_qq_corr.jpg'
+    plt.savefig(fgnm, dpi=200)
+    plt.close(fig)
+
 
 if __name__ == '__main__':
     # ----------------

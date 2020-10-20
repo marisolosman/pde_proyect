@@ -70,7 +70,7 @@ def CalcularETPconDatos(df, idestacion):
     Using the columns of the DataFrame, calculates a column with the etp
     using the FAO formula.
     The variable df, MUST contain the following column names:
-    'Fecha', 'tmax', 'tmin', 'radsup', 'velviento', 'hr', 'precip'
+    'Fecha', 'tmax', 'tmin', 'radsup', 'velviento', 'hr'
     if any of these is not present, throws an error message and stop
     '''
     from oramdb_func import get_latlon_mdb

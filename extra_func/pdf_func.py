@@ -1,12 +1,13 @@
 import os
 import glob
 import pyodbc
+import math
 import numpy as np
 import pandas as pd
 import datetime as dt
 
 '''
-Modulo de funciones para
+Modulo de funciones para trabajar con las pdf
 '''
 
 def calc_percentil(muestra):
@@ -27,7 +28,7 @@ def get_id_estacion(estacion):
     estaciones.txt
     That relates simple name with ID and type in ora.mdb
     '''
-    df = pd.read_csv('./datos/estaciones.txt', sep=';')
+    df = pd.read_csv('../datos/estaciones.txt', sep=';')
     id = df['id_est'].loc[df['nom_est'] == estacion].values[0]
     tipo = df['tipo_est'].loc[df['nom_est'] == estacion].values[0]
 
@@ -147,8 +148,14 @@ def get_ecdf(variable, estacion, mes):
     else:
         df_m['ens_mean'] = col.mean(axis=1)
     df_m = df_m.assign(month=pd.DatetimeIndex(df_m['Fecha']).month)
-    # Seleccionamos segun mes y generamos el ECDF
-    datos_m = df_m.loc[df_m.month == mes, 'ens_mean'].values
+    # Seleccionamos segun mes y generamos el ECDF (mes-1, mes, mes+1)
+    if mes - 1 <= 0:
+        cnd = [12, 1, 2]
+    elif mes + 1 >= 13:
+        cnd = [11, 12, 1]
+    else:
+        cnd = [mes - 1, mes, mes + 1]
+    datos_m = df_m.loc[df_m['month'].isin(cnd), 'ens_mean'].values
     ecdf_m = ECDF(datos_m)
     ##### Trabajo con datos de observacion #####
     id_est, tipo_est = get_id_estacion(estacion)
@@ -156,7 +163,7 @@ def get_ecdf(variable, estacion, mes):
     df_o.columns = ['Fecha', 'variable']
     df_o = df_o.assign(month=pd.DatetimeIndex(df_o['Fecha']).month)
     # Seleccionamos segun mes y generamos el ECDF
-    datos_o = df_o.loc[df_o.month == mes, 'variable'].values
+    datos_o = df_o.loc[df_o['month'].isin(cnd), 'variable'].values
     ecdf_o = ECDF(datos_o)
 
     return ecdf_m, datos_m, ecdf_o, datos_o
@@ -188,6 +195,8 @@ def qq_correction(df_m, estacion):
         df_m = df_m.assign(month=pd.DatetimeIndex(df_m.loc[:, 'Fecha']).month)
         corrected_values = np.empty(tot_val)
         corrected_values[:] = np.nan
+        # Limit for CDF
+        cdf_limite = .99999999
         # Go for each row with data and make the correction according to month
         df_m.reset_index(drop=True, inplace=True)
         for index, row in df_m.iterrows():
@@ -195,6 +204,8 @@ def qq_correction(df_m, estacion):
                                                         estacion, row.month)
             dato = row[columnas[-1]]  #Last column is data, first is Fecha
             p = ecdf_m(dato)
+            if p > cdf_limite:
+                p = cdf_limite
             corr_o = np.nanquantile(datos_o, p, interpolation='linear')
             corr_m = np.nanquantile(datos_m, p, interpolation='linear')
             corrected_values[index] = dato + (corr_o - corr_m)
@@ -216,9 +227,9 @@ def qq_correction(df_m, estacion):
         exit()
 
 
-def qq_correction_precip(df_m, estacion, tipo):
+def qq_correction_precip(df_m, estacion, tipo, **kwargs):
     '''
-    This function receives dataframes of model correct the values
+    This function receives dataframes of model  and correct the values
     using the quantile-quantile technique.
     The df_m DataFrame MUST contain two columns:
     Fecha: The date in a datetime format Pandas
@@ -236,7 +247,6 @@ def qq_correction_precip(df_m, estacion, tipo):
     Ines et al., 2006. 'Bias correction of daily GCM rainfall
     for crop simulation studies'
     '''
-    import math
     # Gamma Module from scipy
     from scipy.stats import gamma
     # ECDF function
@@ -247,6 +257,7 @@ def qq_correction_precip(df_m, estacion, tipo):
     result =  all(elem in columnas  for elem in list2)
     if result and len(columnas) == 2:
         print(' ################# Correccion Q-Q Precip #################')
+        print(' ################# ' + tipo + ' #################')
         df_m = df_m.assign(month=pd.DatetimeIndex(df_m.loc[:, 'Fecha']).month)
         corrected_values = np.empty(len(df_m))
         corrected_values[:] = np.nan
@@ -262,7 +273,13 @@ def qq_correction_precip(df_m, estacion, tipo):
             ecdf_m, datos_m, ecdf_o, datos_o = get_ecdf('precip', estacion,
                                                         row.month)
             # Minimum value observed (NON-ZERO)
+            if index == 0:
+                print('Max Datos OBS: ', np.nanmax(datos_o))
+                print('Max Datos MOD: ', np.nanmax(datos_m))
             xo_min, xm_min = calc_min_pp(estacion, row.month)
+            # Check if kwargs contains a fixed minimum value for precipitation
+            if 'fix_val' in kwargs:
+                xm_min = kwargs.get('fix_val')
             # Days with precipitacion
             in_dato = np.array([e > xo_min if ~np.isnan(e) else False
                                 for e in datos_o], dtype=bool)
@@ -291,9 +308,17 @@ def qq_correction_precip(df_m, estacion, tipo):
                     # ----------- Corrected Value is F^-1(F(xi))
                     dato = row['precip']
                     p1 = gamma.cdf(dato, *mod_gamma)
+                    if p1 > cdf_limite:
+                        p1 = cdf_limite
                     corr_o = gamma.ppf(p1, *obs_gamma)
                     corr_m = gamma.ppf(p1, *mod_gamma)
                     corrected_values[index] = dato + (corr_o - corr_m)
+                    if dato > 60.:
+                        print('PP mod: ', dato)
+                        print('p1: ', p1)
+                        print('corr_o: ', corr_o)
+                        print('corr_m: ', corr_m)
+                        print('PP-corrected by GG: ', corrected_values[index])
             elif tipo == 'EG':
                 # OBS --> Gamma / Model --> ECDF
                 if pp_prono < xm_min:
@@ -304,14 +329,37 @@ def qq_correction_precip(df_m, estacion, tipo):
                     corrected_values[index] = pp_corr
                 else:
                     # Fit gamma distribution with Model Data
-                    mod_precdias = datos_m[datos_m > xm_min]
+                    in_dm = np.array([e > xm_min if ~np.isnan(e) else False
+                                        for e in datos_m], dtype=bool)
+                    mod_precdias = datos_m[in_dm]
                     ecdf_m_pp = ECDF(mod_precdias)
                     # Corrected Value is F^-1(F(xi))
                     dato = row['precip']
                     p1 = ecdf_m_pp(pp_prono)
+                    if p1 > cdf_limite:
+                        p1 = cdf_limite
+                    # Gamma for Obs
                     corr_o = gamma.ppf(p1, *obs_gamma)
-                    corr_m = np.nanquantile(datos_m, p1, interpolation='linear')
+                    # Empirical distribution for Model
+                    corr_m = np.nanquantile(mod_precdias, p1, interpolation='linear')
                     corrected_values[index] = dato + (corr_o - corr_m)
+            elif tipo == 'Mult-Shift':
+                if pp_prono < xm_min:
+                    pp_corr = 0.
+                    corrected_values[index] = pp_corr
+                elif math.isnan(pp_prono):
+                    pp_corr = np.nan
+                    corrected_values[index] = pp_corr
+                else:
+                    # Calculate the average of PP of model and observation
+                    in_dm = np.array([e > xm_min if ~np.isnan(e) else False
+                                        for e in datos_m], dtype=bool)
+                    mod_precdias = datos_m[in_dm]
+                    xm_mean = np.nanmean(mod_precdias)
+                    xo_mean = np.nanmean(obs_precdias)
+                    corr_factor = xo_mean/xm_mean
+                    corrected_values[index] = corr_factor*pp_prono
+
 
         # End Of LooP
         df_out = df_m.loc[:, [columnas[0], columnas[1]]].copy()

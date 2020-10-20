@@ -5,6 +5,10 @@ __pycache__/
 #Datos Estaticos
 datos/
 
+# Figuras
+*.png
+# Archivos Excel
+*.xlsx
 #Compiled source #
 ###################
 *.com
