@@ -5,8 +5,6 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 
-#import sys
-#sys.path.append('../bh_process/')
 from etp_func import (calcularDr, calcularOmegaS, calcularRa,
                       calcularDelta, calculaRSdeHeliofania)
 '''
@@ -31,6 +29,14 @@ def get_hist_sql_string(tv, ti, ide):
     if tv == 'precip':
         SQL_q1 = '''
             SELECT Fecha, Precipitacion FROM DatoDiario
+            WHERE Estacion = {}
+            AND (((DatoDiario.Fecha)>=#1/1/1999#))
+            AND (((DatoDiario.Fecha)<=#12/31/2010#))
+            ORDER BY Fecha
+            '''.format(ide)
+    elif tv == 'etp':
+        SQL_q1 = '''
+            SELECT Fecha, ETP FROM DatoDiario
             WHERE Estacion = {}
             AND (((DatoDiario.Fecha)>=#1/1/1999#))
             AND (((DatoDiario.Fecha)<=#12/31/2010#))
@@ -79,7 +85,8 @@ def get_hist_sql_string(tv, ti, ide):
                 AND (((DatoDiarioSMN.Fecha)<=#12/31/2010#))
                 ORDER BY Fecha
                 '''.format(ide)
-    elif tv == 'hr':
+
+    elif tv == 'hrmean':
         if ti == 'SMN':
             if ti == 'SMN':
                 SQL_q1 = '''
@@ -135,7 +142,7 @@ def read_SMN_data(var, tipo, idestacion):
         # Transformamos ambas series de km/hora --> m/s
         df1['Viento'] = (1./3.6) * df1['Viento']
         df4['Viento'] = (1./3.6) * df4['Viento']
-    elif var == 'hr':
+    elif var == 'hrmean':
         df3 = df2.groupby([df2['D_LOCAL'].dt.date])['Humedad'].mean()
         df3 = df3.iloc[1::]
         aux = {'Fecha': df3.index, 'Humedad':df3.values}
@@ -150,6 +157,12 @@ def read_SMN_data(var, tipo, idestacion):
     df3 = None
     df4 = None
     #
+    if var == 'wnd10m' or var == 'velviento':
+        print('NaN ', df['Viento'].isna().sum())
+        df.rename(columns={'Viento': 'velviento'}, inplace=True)
+    elif var == 'hrmean':
+        print('NaN ', df['Humedad'].isna().sum())
+        df.rename(columns={'Humedad': 'hrmean'}, inplace=True)
     return df
 
 
@@ -187,7 +200,7 @@ def read_data_hist_mdb(var, tipo, idestacion):
         logging.warn(err)
         print('La base NO esta en: ' + db)
         print('Si no, corregir codigo read_data_hist_mdb en oramdb_func.py')
-    listVar = ['tmax', 'tmin', 'hr', 'velviento', 'precip', 'radsup']
+    listVar = ['tmax', 'tmin', 'hrmean', 'velviento', 'precip', 'radsup', 'etp']
     if var not in listVar:
         err_msg =''' El tipo de variable: {} NO se encuentra
         en el listado.\n
@@ -209,8 +222,9 @@ def read_data_hist_mdb(var, tipo, idestacion):
         print(listVar)
         print(err_msg)
         exit()
-    if var == 'hr' or var == 'velviento':
+    if var == 'hrmean' or var == 'velviento':
         df = read_SMN_data(var, tipo, idestacion)
+        df.dropna(inplace=True)
     elif var == 'radsup':
         SQL_q, SQL_extra = get_hist_sql_string(var, tipo, idestacion)
         df0 = pd.read_sql_query(SQL_q, cnxn)
@@ -238,164 +252,30 @@ def read_data_hist_mdb(var, tipo, idestacion):
                                         df0.delta, df0.omega)
         df0['Rs'] = calculaRSdeHeliofania(df0.Heliofania.values,\
                                                    df0.omega, df0.Ra);
-        df = df0[['Fecha', 'Rs']]
+        df = df0.loc[:, ['Fecha', 'Rs']]
+        print('NaN ', df['Rs'].isna().sum())
+        df.dropna(inplace=True)
+        df.rename(columns={'Rs':var}, inplace=True)
     else:
         SQL_q, SQL_extra = get_hist_sql_string(var, tipo, idestacion)
         df = pd.read_sql_query(SQL_q, cnxn)
         cnxn.close()
+        if var == 'precip':
+            df.rename(columns={'Precipitacion':var}, inplace=True)
+            print('NaN ', df[var].isna().sum())
+        elif var == 'tmax':
+            df.rename(columns={'Tmax':var}, inplace=True)
+            print('NaN ', df[var].isna().sum())
+            df.dropna(inplace=True)
+        elif var == 'tmin':
+            df.rename(columns={'Tmin':var}, inplace=True)
+            print('NaN ', df[var].isna().sum())
+            df.dropna(inplace=True)
+        elif var =='etp':
+            df.rename(columns={'ETP':var}, inplace=True)
+            print('NaN ', df[var].isna().sum())
+            df.dropna(inplace=True)
     return df
-
-
-def get_id_cultivo(cultivo):
-    '''
-    Obtains the ID_CULTIVO to work with other tables.
-    The entry is the string that is used in the database:
-    '''
-    try:
-        cnxn = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(drv, db, pwd))
-    except pyodbc.Error as err:
-        logging.warn(err)
-        print('La base NO esta en: ' + db)
-        print('Si no, corregir codigo read_data_hist_mdb en oramdb_func.py')
-    # End TRY
-    t_cult = pd.read_sql_query('SELECT * FROM Cultivo', cnxn)
-    try:
-        condicion = t_cult.Codigo == cultivo
-        n_cultivo = t_cult['IdCultivo'].loc[condicion].values[0]
-    except:
-        print( '############ ERROR ###############')
-        print('Para el cultivo ingresado: ' + cultivo + ' NO hay codigo')
-        print( '##################################')
-        exit()
-
-    return n_cultivo
-
-
-def read_soil_parameter(idestacion, cultivo, tipo_bh):
-    '''
-    This function read the soil parameters given the ID in ora.mdb station
-    database
-    '''
-    id_cultivo = get_id_cultivo(cultivo)
-    try:
-        cnxn = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(drv, db, pwd))
-    except pyodbc.Error as err:
-        logging.warn(err)
-        print('La base NO esta en: ' + db)
-        print('Si no, corregir codigo read_data_hist_mdb en oramdb_func.py')
-    # End TRY
-    SQL1 = '''
-        SELECT ID, NombreUnidad, PatronSuelo, Cultivo FROM Balance
-        WHERE Estacion = {}
-        AND Cultivo = {}
-        '''.format(idestacion, id_cultivo)
-    PatSoil = pd.read_sql_query(SQL1, cnxn)
-    if not PatSoil.empty:
-        if tipo_bh == 'superficial':
-            print('##### Parametros BH - Superficial #####')
-            SQL2 = '''
-                   SELECT Nombre, CC_sup, PMP_sup, CE_sup, CP_sup FROM PatronSuelo
-                   WHERE IdPatron = {}
-                   '''.format(str(PatSoil.PatronSuelo.values[0]))
-            df1 = pd.read_sql_query(SQL2, cnxn)
-            df1.rename(columns={'CC_sup':'CC', 'PMP_sup':'PMP', 'CE_sup':'CE',
-                                'CP_sup':'CP'},
-                       inplace=True)
-        elif tipo_bh == 'profundo':
-            print('##### Parametros BH - Profundo #####')
-            SQL2 = '''
-                   SELECT Nombre, CC, PMP, CE, CP FROM PatronSuelo
-                   WHERE IdPatron = {}
-                   '''.format(str(PatSoil.PatronSuelo.values[0]))
-            df1 = pd.read_sql_query(SQL2, cnxn)
-        else:
-            print( '############ ERROR ###############')
-            print('El tipo de BH: ' + tipo_bh)
-            print('NO esta implementado o NO existe para calcular.')
-            print( '##################################')
-            exit()
-        cnxn.close()
-        out_dict = {'Nombre': df1.Nombre.values[0], 'CC': df1.CC.values[0],
-                    'PMP': df1.PMP.values[0], 'CE': df1.CE.values[0],
-                    'CP': df1.CP.values[0]}
-        # Soil parameters to calculate
-        agua_util = out_dict['CC'] - out_dict['PMP']
-        lim_desec = 2.5*(out_dict['PMP']/out_dict['CC'] - 0.4)
-        if lim_desec < 0.:
-            lim_desec = 0.
-        elif lim_desec > 1.:
-            lim_desec = 1.
-        alm_min = lim_desec * out_dict['PMP']
-        ccd = out_dict['CC'] - alm_min
-        umbral_perc = out_dict['PMP'] + 0.5*agua_util
-        # Save new parameters in output
-        out_dict['AU'] = agua_util
-        out_dict['LD'] = lim_desec  # Limite desecamiento
-        out_dict['ALM_MIN'] = alm_min  # ALM Minimo
-        out_dict['CCD'] = ccd  # Cap. Campo Disponible
-        out_dict['UI'] = umbral_perc  # Umbral de Percolacion
-
-        return out_dict
-    else:
-        cnxn.close()
-        print('############ ERROR ###############')
-        print('---- -- Sin datos de Suelo -------')
-        print('El cultivo ' + cultivo)
-        print('No se realiza en la estacion: ' + idestacion)
-        print( '##################################')
-        exit()
-
-
-def read_fenologia(idestacion, cultivo):
-    '''
-    This function reads the id of station and the crop and returns
-    a DataFrame which index goes from 1-366 (Julian day) and contains a column
-    name Kc, which gives the value of the crop Kc according to fenology from
-    ora.mdb database.
-    '''
-    try:
-        cnxn = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(drv, db, pwd))
-    except pyodbc.Error as err:
-        logging.warn(err)
-        print('La base NO esta en: ' + db)
-        print('Si no, corregir codigo read_data_hist_mdb en oramdb_func.py')
-    # End TRY
-    id_cultivo = get_id_cultivo(cultivo)
-    # End TRY
-    # Select Fenology for specified crop
-    SQL1 = '''
-        SELECT * FROM EtapaFenologica
-        WHERE Cultivo = {}
-        '''.format(id_cultivo)
-    df = pd.read_sql_query(SQL1, cnxn)
-    # Select Patron KC for specified crop and station
-    SQL1 = '''
-        SELECT PatronKC FROM Balance
-        WHERE Cultivo = {}
-        AND Estacion = {}
-        '''.format(id_cultivo, idestacion)
-    aux_PatKC = pd.read_sql_query(SQL1, cnxn)
-    if not aux_PatKC.empty:
-        PatKC = aux_PatKC.loc[0,:].values[0]
-        # Select Julian Days for specified crop
-        SQL1 = '''
-               SELECT * FROM FenologiaPorZona
-               WHERE patronKc = {}
-               '''.format(str(PatKC))
-        FenZona = pd.read_sql_query(SQL1, cnxn)
-        cnxn.close()
-        df.rename(columns={'id':'idEtapa'}, inplace=True)
-        resultado = pd.merge(df, FenZona, on='idEtapa')
-
-        return resultado
-    else:
-        cnxn.close()
-        print('############ ERROR ###############')
-        print('------- Sin Fenologia -------')
-        print('El cultivo ' + cultivo)
-        print('No se realiza en la estacion: ' + idestacion)
-        print( '##################################')
-        exit()
 
 
 def get_medias_ETP(idestacion):
@@ -416,15 +296,48 @@ def get_medias_ETP(idestacion):
     return tabla
 
 
+def get_data_estacion_mdb(idestacion):
+    '''
+    La base de datos cuenta con las latitudes y longitudes de cada estacion
+    Esta funcion devuelve los valores de latitud y longitud a partir de la
+    ID de la estacion
+    '''
+    try:
+        cnxn = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(drv, db, pwd))
+    except pyodbc.Error as err:
+        logging.warn(err)
+        print('La base NO esta en: ' + db)
+        print('Si no, corregir codigo read_data_hist_mdb en oramdb_func.py')
+    idtipo = pd.read_sql_query('SELECT * From TipoEstacion', cnxn)
+    provincia = pd.read_sql_query('SELECT * From Provincia', cnxn)
+    SQL_E = '''
+            SELECT Nombre, ProvinciaID, IdTipo, Latitud, Longitud From Estacion
+            WHERE IdEstacion = {}
+            '''.format(idestacion)
+    df_d = pd.read_sql_query(SQL_E, cnxn)
+    cnxn.close()
+    if df_d.empty:
+        print('Los datos ingresado no corresponden a una estacion en la base')
+        lat_e = np.nan
+        lon_e = np.nan
+    else:
+        out = {}
+        out['Nombre'] = df_d.Nombre.values[0]
+        out['Provincia'] = provincia.loc[provincia['IDProv']== df_d.ProvinciaID.values[0],
+                                         'Provincia'].values[0]
+        out['Tipo'] = idtipo.loc[idtipo['IdTipo']== df_d.IdTipo.values[0], 'Nombre'].values[0]
+        out['Lat'] = df_d.Latitud.values[0]
+        out['Lon'] = df_d.Longitud.values[0]
+        out['id'] = idestacion
+
+    return out
+
+
 if __name__ == "__main__":
-    from bhora_func import get_KC
-    # ------
-    idestacion = '107'
-    cultivo = 'S1-VII'
-    tipo_bh = 'profundo'
-    kwargs = {'plot': True}
-    ds = read_soil_parameter(idestacion, cultivo, tipo_bh)
-    print(ds)
-    fen = read_fenologia(idestacion, cultivo)
-    print(fen)
-    get_KC(idestacion, cultivo, **kwargs)
+    variables = ['tmax', 'tmin', 'radsup', 'hrmean', 'velviento', 'precip']
+    for nomvar in variables:
+        df = pd.read_csv('../datos/estaciones.txt', sep=';')
+        for row in df.itertuples():
+            print(nomvar)
+            dfm = read_data_hist_mdb(nomvar, row.tipo_est, row.id_est)
+    #print(dfm)

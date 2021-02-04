@@ -1,0 +1,4 @@
+nom_est;id_est;tipo_est
+resistencia;107;SMN
+junin;100;SMN
+venado_tuerto;119;SMN

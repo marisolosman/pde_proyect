@@ -28,6 +28,7 @@ from statsmodels.distributions.empirical_distribution import ECDF
 #
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib.backends.backend_pdf import PdfPages
 
 from pandas.plotting import register_matplotlib_converters
 
@@ -78,7 +79,7 @@ def variables_a_trabajar(nombre, archivo, nens):
 def fit_ecdf(df, var, mes, year_test='None', option=0):
     """
     """
-    cdf_limite = .99999999
+    cdf_limite = .9999999
     if mes - 1 <= 0:
         cnd = [12, 1, 2]
     elif mes + 1 >= 13:
@@ -93,8 +94,6 @@ def fit_ecdf(df, var, mes, year_test='None', option=0):
         # generate index to work in cnd and out of year considered.
         im_tot = np.logical_and(df['month'].isin(cnd), np.logical_not(id_fm))
         # extract data to generate the distribution of historical data.
-        print(np.unique(pd.DatetimeIndex(df.loc[im_tot, 'Fecha']).year.to_numpy()))
-        print(np.unique(pd.DatetimeIndex(df.loc[im_tot, 'Fecha']).month.to_numpy()))
         datos = df.loc[im_tot, var].values
     #
     ecdf_var = ECDF(datos)
@@ -109,70 +108,71 @@ def fit_ecdf(df, var, mes, year_test='None', option=0):
 # $$$ Initial data to work
 start = time.time()
 # Archivo con datos historicos de la variable:
-# precip, tmax, tmin, velviento, radsup, hr
-nomvar = 'hr'
+# tmax, tmin, velviento, radsup, hr
 ens_mem = 1  # Miembro a utilizar como prueba
-mes = 1  # Mes en el cual se realiza el analisis
 tipo_est = 'SMN'
 id_est = '107'
 estacion = 'resistencia'
-cdf_limite = .99999999
-# Datos a utilizar
-var_file = './datos/resistencia/data_final_' + nomvar + '.txt'
-# d_var = Media ensamble --> Ajustar ECDF
-# d_ens = Un miembro del ensamble.
-d_var, d_ens = variables_a_trabajar(nomvar, var_file, ens_mem)
-d_obs = read_var_mdb(nomvar, tipo_est, id_est)
-
-varsincorr = []
-varcorr = []
-for year_test in np.arange(1999, 2011):
-    print('--------', year_test, '----------')
-    id_fm = np.logical_and(d_ens.Fecha >= '01/01/'+str(year_test),
-                           d_ens.Fecha <= '12/31/'+str(year_test))
-    # data of year to work.
-    prono_m = d_ens.loc[id_fm, nomvar].values
-    meses_m = d_ens.loc[id_fm, 'month'].values
-    # Corregimos los valores del mes de interes
-    prono = prono_m[meses_m == mes]
-    varsincorr.extend(prono)
-    corregidos = prono_m[meses_m == mes]
-    # Ajustamos ECDF con los datos historicos
-    #fit_ecdf(df, var, mes, year_test='None', option=0)
-    obs_ecdf, datos_o = fit_ecdf(d_obs, nomvar, mes, year_test)
-    mod_ecdf, datos_m = fit_ecdf(d_var, nomvar, mes, year_test)
-    p1 = mod_ecdf(corregidos)
-    p1[p1 > cdf_limite] = cdf_limite
-    corr_o = np.nanquantile(datos_o, p1, interpolation='linear')
-    corr_m = np.nanquantile(datos_m, p1, interpolation='linear')
-    corregidos = corregidos + (corr_o - corr_m)
-    varcorr.extend(corregidos)
+cdf_limite = .9999999
 #
-# Datos para graficar
-obs_ecdf = fit_ecdf(d_obs, nomvar, mes, 'None', 1)
-mod_ecdf = fit_ecdf(d_var, nomvar, mes, 'None', 1)
-# Datos modelados corregidos para el periodo total
-corr_ecdf = ECDF(varcorr)
-"""
-frec_modc = 1. - 1.*np.array(ppcorr)[in_corr].shape[0]/datos_m.shape[0]
-print('min PP mod-corr: ', xm_min)
-print('Frec. Dias PP: ', frec_modc)
-in_corr = np.array([e > xo_min if ~np.isnan(e) else False
-                    for e in ppcorr_o], dtype=bool)
-corr_cdf_o = ECDF(np.array(ppcorr_o)[in_corr])
-in_corr = np.array([e > xm_min if ~np.isnan(e) else False
-                    for e in ppcorr_m], dtype=bool)
-corr_cdf_m = ECDF(np.array(ppcorr_m)[in_corr])
-"""
-# Figura
-fig, ax = plt.subplots(nrows=1, ncols=1, facecolor='white')
-ax.plot(obs_ecdf.x, obs_ecdf.y, 'b.', label='OBS')
-ax.plot(mod_ecdf.x, mod_ecdf.y, 'r.', label='MODEL')
-ax.plot(corr_ecdf.x, corr_ecdf.y, 'g.', label='MODEL-CORR')
-plt.title(estacion + '; mes: ' + str(mes) + '; variable: ' + nomvar )
-plt.legend()
-#plt.show()
-#plt.close()
-plt.savefig('./' + '_'.join([nomvar, str(mes)]) + '.png', dpi=200)
+archivo = './diagnostico_otros.pdf'
+if os.path.isfile(archivo):
+    os.remove(archivo)
+pdf = PdfPages(archivo)
+props = dict(boxstyle='round', facecolor='white', alpha=0.8)
+meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+#
+for nomvar in ['tmax', 'tmin', 'velviento', 'radsup', 'hr' ]:
+    var_file = './datos/resistencia/data_final_' + nomvar + '.txt'
+    # d_var = Media ensamble --> Ajustar ECDF
+    # d_ens = Un miembro del ensamble.
+    d_var, d_ens = variables_a_trabajar(nomvar, var_file, ens_mem)
+    d_obs = read_var_mdb(nomvar, tipo_est, id_est)
+    fig, ejes = plt.subplots(nrows=4, ncols=3, sharey=True, sharex=True, facecolor='white')
+    fig.set_size_inches(9, 10, forward=True)
+    for ax, mes, st_mes in zip(ejes.flatten(), np.arange(1, 13), meses):
+        varsincorr = []
+        varcorr = []
+        for year_test in np.arange(1999, 2011):
+            print('--------', year_test, '----------')
+            id_fm = np.logical_and(d_ens.Fecha >= '01/01/'+str(year_test),
+                                   d_ens.Fecha <= '12/31/'+str(year_test))
+            # data of year to work.
+            prono_m = d_ens.loc[id_fm, nomvar].values
+            meses_m = d_ens.loc[id_fm, 'month'].values
+            # Corregimos los valores del mes de interes
+            prono = prono_m[meses_m == mes]
+            varsincorr.extend(prono)
+            corregidos = prono_m[meses_m == mes]
+            # Ajustamos ECDF con los datos historicos
+            obs_ecdf, datos_o = fit_ecdf(d_obs, nomvar, mes, year_test)
+            mod_ecdf, datos_m = fit_ecdf(d_var, nomvar, mes, year_test)
+            p1 = mod_ecdf(corregidos)
+            p1[p1 > cdf_limite] = cdf_limite
+            corr_o = np.nanquantile(datos_o, p1, interpolation='linear')
+            corr_m = np.nanquantile(datos_m, p1, interpolation='linear')
+            corregidos = corr_o
+            varcorr.extend(corregidos)
+        #---- year_test -----
+        # Datos para graficar
+        obs_ecdf = fit_ecdf(d_obs, nomvar, mes, 'None', 1)
+        mod_ecdf = fit_ecdf(d_var, nomvar, mes, 'None', 1)
+        # Datos modelados corregidos para el periodo total
+        corr_ecdf = ECDF(varcorr)
+        # Figura
+        ax.plot(obs_ecdf.x, obs_ecdf.y, 'b.', label='OBS', zorder=1)
+        ax.plot(mod_ecdf.x, mod_ecdf.y, 'r.', label='MODEL', zorder=1)
+        ax.plot(corr_ecdf.x, corr_ecdf.y, 'g.', label='MODEL-CORR', zorder=1)
+        ax.set_title(st_mes, loc='left', fontsize=9)
+        ax.grid(color='gray', linestyle='--', zorder=0)
+        ax.legend(loc='best', fontsize=7)
+    # ----- mes -----
+    fig.subplots_adjust(left = 0.05, right = 0.95,
+                        bottom = 0.05, top = 0.90,
+                        wspace = 0.2, hspace = 0.4)
+    plt.suptitle(estacion + '; variable: ' + nomvar )
+    pdf.savefig(fig)
+#----- nomvar ------
+pdf.close()
 end = time.time()
 print(end - start)

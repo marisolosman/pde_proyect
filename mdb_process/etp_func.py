@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import datetime as dt
-
+import sys
+sys.path.append('../extra_func/')
+from extras_func import clas_decada
 '''
 Listado de funciones para calcular ETP.
 Considera como base un DataFrame (DF) de Pandas.
@@ -78,11 +80,11 @@ def CalcularETPconDatos(df, idestacion):
     # ----------------------------------
 
     list1 = df.columns
-    list2 = ['Fecha', 'tmax', 'tmin', 'radsup', 'velviento', 'hr']
+    list2 = ['Fecha', 'tmax', 'tmin', 'radsup', 'velviento', 'hrmean']
     result =  all(elem in list1  for elem in list2)
     Latitud, longi = get_latlon_mdb(idestacion)
     if result:
-        print(' ################# Calculando ETP #################')
+        #print(' ################# Calculando ETP #################')
         a_juliano = np.array(df['Fecha'].dt.strftime('%j').values,
                              dtype=np.float64)
         #### Valores extras
@@ -97,7 +99,7 @@ def CalcularETPconDatos(df, idestacion):
         # CALCULA TENSION DE VAPOR Y PENDIENTE DE SU CURVA
         Temp = 0.5 * (df.tmax + df.tmin)
         ES = 0.6108 * np.exp((17.27 * Temp) / (Temp + 237.3))
-        EA = ES * df.hr / 100.
+        EA = ES * df.hrmean / 100.
         Pend = 4098. * ES / np.power((Temp + 237.3), 2)
 
         ### CALCULA LA RADIACION RN
@@ -141,8 +143,8 @@ def man_Falt_ETP(d_etp, idestacion):
     to calculate the ETP (in case is missing).
     '''
     import datetime as dt
+    from oramdb_func import get_latlon_mdb
     from oramdb_func import get_medias_ETP
-    from extras_func import clas_decada
 
     t_etp = get_medias_ETP(idestacion)
     # Get index of NaN Values for ETP
