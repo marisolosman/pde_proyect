@@ -6,7 +6,7 @@ necessary to do:
     - 16 ensemble members (EM)
     - Each of the EM contains a 30 day forecast values
      to all variables that are needed to made a Hidryc Balance
-     forecast (tmax, tmin, radsup, hr, velviento and precip). 
+     forecast (tmax, tmin, radsup, hr, velviento and precip).
 """
 import sys
 import os
@@ -16,7 +16,7 @@ import datetime as dt
 import glob
 import time
 import xarray as xr
-from pytz import timezone 
+from pytz import timezone
 from grib_func import get_files_o
 
 
@@ -197,7 +197,7 @@ dic['fdate'] = f_fecha
 archi = get_ens_file(var, i_fecha)
 
 # Abrimos una carpeta y guardamos los archivos ahi
-cpta_salida = '../pde_salidas/' + n_est[0] + '/' + fecha.strftime('%Y%m%d') + '/'
+cpta_salida = '../datos/datos_op/' + n_est[0] + '/' + fecha.strftime('%Y%m%d') + '/'
 os.makedirs(cpta_salida, exist_ok=True)
 dic['ofolder'] = cpta_salida
 print(dic)
@@ -276,7 +276,7 @@ else:
         elif var == 'tmin':
             fvar = var
             resu = datos.resample(rule='1D').min()
-        grbs.close() 
+        grbs.close()
         # Seleccionamos datos de pronostico para prox 30 dias
         sel_d = np.logical_and(resu.index >= arg_tz.localize(i_fecha),\
                                resu.index <= arg_tz.localize(f_fecha))
@@ -290,4 +290,3 @@ else:
 
 
 print("--- %s seconds ---" % (time.time() - start_time))
-
