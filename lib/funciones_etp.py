@@ -1,10 +1,6 @@
 import numpy as np
 import pandas as pd
 import datetime as dt
-import sys
-sys.path.append('../mdb_process/')
-from oramdb_func import get_latlon_mdb
-from oramdb_func import get_medias_ETP
 
 np.seterr(divide='ignore', invalid='ignore')
 '''

@@ -103,7 +103,6 @@ def read_fenologia(idestacion, cultivo):
     dg1 = dg0.loc[dg0.Cultivo == id_cultivo]
     dg2 = dg1.loc[dg1.Estacion == int(idestacion)]
     aux_PatKC = dg2.loc[:, 'PatronKC']
-    print(aux_PatKC)
     if not aux_PatKC.empty:
         PatKC = aux_PatKC.values[0]
         # Select Julian Days for specified crop

@@ -7,7 +7,7 @@ from funciones_correccion import qq_correction
 
 import sys
 sys.path.append('../mdb_process/')
-from oramdb_cultivos import read_soil_parameter
+from oramdb_cultivos_excel import read_soil_parameter
 
 np.seterr(divide='ignore', invalid='ignore')
 

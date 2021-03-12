@@ -5,9 +5,9 @@ from class_bhora import class_bhora
 
 import matplotlib.pyplot as plt
 # Datos INPUT
-carpeta = '../datos_op/resistencia/20081203/'
+carpeta = '../datos_op/resistencia/20081201/'
 estacion = 'resistencia'
-fecha = '20090218'
+fecha = '20081201'
 correccion = True
 tipo_bh = 'profundo'
 cultivo = 'S1-VII'
