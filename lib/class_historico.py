@@ -10,7 +10,7 @@ import sys
 sys.path.append('../mdb_process/')
 from etp_func import CalcularETPconDatos
 
-from oramdb_cultivos import read_soil_parameter
+from oramdb_cultivos_excel import read_soil_parameter
 
 np.seterr(divide='ignore', invalid='ignore')
 
