@@ -1,13 +1,13 @@
 import sys
-sys.path.append('c:/felix/ora/python_scripts/pde_proyect/lib/')
+sys.path.append('/home/osman/proyectos/pde_proyect/lib/')
 from class_operativa import class_operativa
 from class_bhora import class_bhora
 
 import matplotlib.pyplot as plt
 # Datos INPUT
-carpeta = '../datos_op/resistencia/20081203/'
+carpeta = '/home/osman/proyectos/pde_proyect/datos/datos_op/resistencia/20081203/'
 estacion = 'resistencia'
-fecha = '20090218'
+fecha = '20090216'
 correccion = True
 tipo_bh = 'profundo'
 cultivo = 'S1-VII'
