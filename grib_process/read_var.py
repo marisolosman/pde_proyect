@@ -32,7 +32,7 @@ from grib_func import create_summary_file
 # --------------------------------------------
 start_time = time.time()
 # ############################################
-folder = '/datos2/CFSReana/'
+folder = '/datos/osman/CFS_operational/'
 yy     = sys.argv[1]  # primer argumento Year
 var    = sys.argv[2]  # Segundo argumento variable
 print(yy, var)
@@ -48,9 +48,9 @@ elif var == 'hrmax':
     var = 'hr'
     operacion = 'max'
 #
-lat_e = [-34.55]  # Test con estacion Resistencia (Chaco, SMN)
-lon_e = [-60.92]
-n_est = ['junin']
+lat_e = [-27.0]  # Test con estacion Resistencia (Chaco, SMN)
+lon_e = [-59.0]
+n_est = ['resistencia']
 
 outfolder = '../pde_salidas/'
 os.makedirs(outfolder, exist_ok=True)

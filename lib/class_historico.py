@@ -7,7 +7,7 @@ from netCDF4 import Dataset, num2date
 import datetime as dt
 from funciones_bhora import get_KC, run_bh_ora
 import sys
-sys.path.append('../mdb_process/')
+sys.path.append('/home/osman/proyectos/pde_proyect/mdb_process/')
 from etp_func import CalcularETPconDatos
 
 from oramdb_cultivos_excel import read_soil_parameter
@@ -16,7 +16,7 @@ np.seterr(divide='ignore', invalid='ignore')
 
 class class_historico:
     def __init__(self, estacion):
-        carpeta = '../datos/datos_hist/'
+        carpeta = '/home/osman/proyectos/pde_proyect/datos/datos_hist/'
         self.estacion = estacion
         self.carpeta_obs = carpeta + '/obs/'
         self.carpeta_mod = carpeta + '/modelo/' + estacion + '/'
@@ -26,8 +26,8 @@ class class_historico:
         self.dtimes = pd.date_range(start='1999-01-01', end='2010-12-31')  # Obtenemos los tiempos del prono
         self.get_data_obs()  # Obtenemos los datos observados
         self.get_data_mod()  # Obtenemos los datos modelados
-        self.calc_etp_mod()  # Calculamos la ETP
-        self.calc_almr_mod()
+        # self.calc_etp_mod()  # Calculamos la ETP
+        #self.calc_almr_mod()
 
     def get_data_obs(self):
         datos = {}

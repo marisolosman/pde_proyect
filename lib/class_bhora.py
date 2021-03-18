@@ -6,7 +6,7 @@ from funciones_bhora import get_KC
 from funciones_correccion import qq_correction
 
 import sys
-sys.path.append('../mdb_process/')
+sys.path.append('/home/osman/projects/pde_proyect/mdb_process/')
 from oramdb_cultivos_excel import read_soil_parameter
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -130,6 +130,7 @@ class class_bhora:
 
     def correct_bhora(self):
         print('CORRIGIENDO BH por BH')
+        print(self.ALMR)
         dato_c = qq_correction(self.ALMR[1:,:].copy(), 'ALMR', self.opera.dtimes,
                                self.opera.estacion)
         dato_c[np.isnan(self.ALMR[1:,:])] = np.nan

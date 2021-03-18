@@ -8,7 +8,7 @@ np.seterr(divide='ignore', invalid='ignore')
 
 class class_operativa:
     def __init__(self, est, fecha, corr, corr_pp='GG'):
-        carpeta = '../datos/datos_op/'
+        carpeta = '/home/osman/proyectos/pde_proyect/datos/datos_op/'
         self.estacion = est
         self.fecha = fecha
         self.carpeta = carpeta + est + '/' + fecha + '/'
@@ -46,7 +46,7 @@ class class_operativa:
 
     def get_latlon(self):
         from netCDF4 import Dataset
-        archivo = '../datos/datos_hist/obs/tmax_199901_201012.nc'
+        archivo = '/home/osman/proyectos/pde_proyect/datos/datos_hist/obs/tmax_199901_201012.nc'
         nc = Dataset(archivo, "r")
         Latitud = nc.variables[self.estacion].lat
         Longitud = nc.variables[self.estacion].lon
@@ -110,7 +110,7 @@ DataFrame. Name of the columns are the number of each ensemble.
     matriz = np.empty((30, 16))
     matriz[:] = np.nan
     for filename in prono_files:
-        nens = int(filename.split('_')[2])
+        nens = int(filename.split('_')[3])
         df = pd.read_csv(filename, index_col=None, header=0,\
                          sep=';', decimal=',')
         matriz[:, nens] = df[n_var].to_numpy()

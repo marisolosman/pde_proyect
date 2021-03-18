@@ -143,11 +143,12 @@ def get_files_o(date, dic):
     lfls = []
     if date == dt.datetime(1999,1,1):
         d1 = date.replace(hour=0)
-        wkfolder = dic['dfolder'] + dic['var'] + '/' + str(d1.year) + '/'
-        sd1 = d1.strftime('%Y%m%d%H')
-        f1 = glob.glob(wkfolder + dic['var'] + '_f.01.' + sd1 + '*grb2')
-        if f1:
-            lfls.append(f1[0])
+        for ii in np.arange(12):
+            wkfolder = dic['dfolder'] + dic['var'] + '/' + str(d1.year) + '/' + '{:02d}'.format(ii + 1) + '/'
+            sd1 = d1.strftime('%Y%m%d%H')
+            f1 = glob.glob(wkfolder + dic['var'] + '_f.01.' + sd1 + '*grb2')
+            if f1:
+                lfls.append(f1[0])
     else:
         if dic['var'] == 'dswsfc':
             iv = dt.timedelta(days=1)
@@ -163,12 +164,15 @@ def get_files_o(date, dic):
             d3 = (date - iv).replace(hour=6)
             d4 = (date - iv).replace(hour=0)
         for dx in [d1, d2, d3, d4]:
-            wkfolder = dic['dfolder'] + dic['var'] + '/' + str(dx.year) + '/'
-            sd1 = dx.strftime('%Y%m%d%H')
-            n_file = wkfolder + dic['var'] + '_f.01.' + sd1
-            f1 = glob.glob(n_file + '*.grb2')
-            if f1:
-                lfls.append(f1[0])
+            for ii in np.arange(12):
+                wkfolder = dic['dfolder'] + dic['var'] + '/' + str(d1.year) + '/' + '{:02d}'.format(ii + 1) + '/'
+                # wkfolder = dic['dfolder'] + dic['var'] + '/' + str(dx.year) + '/'
+                sd1 = dx.strftime('%Y%m%d%H')
+                # n_file = wkfolder + dic['var'] + '_f.01.' + sd1
+                n_file = wkfolder + dic['var'] + '*.01.' + sd1
+                f1 = glob.glob(n_file + '*.grb2')
+                if f1:
+                    lfls.append(f1[0])
     # End IF
     return lfls
 
