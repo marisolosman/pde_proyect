@@ -5,11 +5,9 @@ import pandas as pd
 import numpy as np
 from netCDF4 import Dataset, num2date
 import datetime as dt
-from funciones_bhora import get_KC, run_bh_ora
-import sys
-sys.path.append('../mdb_process/')
-from etp_func import CalcularETPconDatos
 
+from funciones_bhora import get_KC, run_bh_ora
+from funciones_etp import CalcularETPconDatos
 from oramdb_cultivos_excel import read_soil_parameter
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -24,10 +22,21 @@ class class_historico:
         self.archivos_mod = glob.glob(self.carpeta_mod + '*.txt')
         self.var = ['tmax', 'tmin','velviento', 'radsup', 'hrmean', 'precip', 'etp']
         self.dtimes = pd.date_range(start='1999-01-01', end='2010-12-31')  # Obtenemos los tiempos del prono
+        self.get_latlon()
         self.get_data_obs()  # Obtenemos los datos observados
         self.get_data_mod()  # Obtenemos los datos modelados
         self.calc_etp_mod()  # Calculamos la ETP
         self.calc_almr_mod()
+
+    def get_latlon(self):
+        from netCDF4 import Dataset
+        archivo = '../datos/datos_hist/obs/tmax_199901_201012.nc'
+        nc = Dataset(archivo, "r")
+        Latitud = nc.variables[self.estacion].lat
+        Longitud = nc.variables[self.estacion].lon
+        nc.close()
+        self.lat = Latitud
+        self.lon = Longitud
 
     def get_data_obs(self):
         datos = {}
@@ -74,7 +83,7 @@ class class_historico:
         dic = self.datos_mod.copy()
         dic['Fecha'] = self.dtimes
         ds = pd.DataFrame(data=dic)
-        ds1 = CalcularETPconDatos(ds, self.id_ora)
+        ds1 = CalcularETPconDatos(ds, self.id_ora, self.lat)
         self.datos_mod['etp'] = ds1['ETP'].to_numpy()
         self.mask_mod['etp'] = ds1['i_ETPm'].to_numpy()
 

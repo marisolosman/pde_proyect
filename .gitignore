@@ -9,6 +9,7 @@ __pycache__/
 *.png
 # Archivos Excel
 *.xlsx
+*.xls
 #Compiled source #
 ###################
 *.com
