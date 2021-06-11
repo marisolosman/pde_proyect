@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import pandas as pd
 # Gamma Module from scipy
 from scipy.stats import gamma
 # ECDF function
@@ -70,9 +71,11 @@ def fit_ecdf(estacion, nomvar, mes, year_test='None'):
     """
     do, dm = select_data_period(estacion, nomvar, mes)
     #
+    minimos_pp = pd.read_excel('../datos/minimos_pp.xls', index_col=0)
+    min_pp = minimos_pp.loc[mes, estacion]
     if nomvar == 'precip':
         ppo_data = precipitation_days(do, 0.1)
-        ppm_data = precipitation_days(dm, 1.)
+        ppm_data = precipitation_days(dm, min_pp)
         ecdf_obs = ECDF(ppo_data)
         ecdf_mod = ECDF(ppm_data)
     else:
@@ -82,11 +85,14 @@ def fit_ecdf(estacion, nomvar, mes, year_test='None'):
     return ecdf_obs, ecdf_mod, do, dm
 
 
-def fit_gamma_param(estacion, mes, xo_min=0.1, xm_min=1., year_test='None'):
+def fit_gamma_param(estacion, mes, year_test='None'):
     # Ajusta parametros de Gamma para precipitacion
     do, dm = select_data_period(estacion, 'precip', mes)
     cdf_limite = .9999999
-    #
+    # Minimos de precipitacion (obs fijo = 0.1, modelo el que mejor ajusta a frec)
+    xo_min = 0.1
+    minimos_pp = pd.read_excel('../datos/minimos_pp.xls', index_col=0)
+    xm_min = minimos_pp.loc[mes, estacion]
     # Days with precipitacion
     ppo_data = precipitation_days(do, xo_min)
     ppm_data = precipitation_days(dm, xm_min)
@@ -116,13 +122,17 @@ def qq_correction(data, nomvar, dtimes, estacion):
     return data_corr
 
 
-def qq_correction_pp(data, dtimes, estacion, tipo_ajuste='GG',
-                     xo_min=0.1, xm_min=1.):
+def qq_correction_pp(data, dtimes, estacion, tipo_ajuste='GG'):
     cdf_limite = .9999999
+    # Minimos de precipitacion (el del modelo se elige acorde al mes)
+    xo_min = 0.1
+    minimos_pp = pd.read_excel('../datos/minimos_pp.xls', index_col=0)
+    #
     meses = [a.month for a in dtimes]
     data_corr = np.empty(data.shape)
     data_corr[:] = np.nan
     for mes in np.unique(meses):
+        xm_min = minimos_pp.loc[mes, estacion]
         prono = data[meses==mes, :]
         corr = data[meses==mes,:]
         corr[prono <= xm_min] = 0.
@@ -131,15 +141,14 @@ def qq_correction_pp(data, dtimes, estacion, tipo_ajuste='GG',
         idc = np.logical_and(prono > xm_min, np.logical_not(np.isnan(prono)))
         if tipo_ajuste == 'GG':
             # Ajustamos una gamma a los valores con precipitacion y corregimos
-            obs_gamma, mod_gamma = fit_gamma_param(estacion, mes, xo_min, xm_min)
-
+            obs_gamma, mod_gamma = fit_gamma_param(estacion, mes)
             p1 = gamma.cdf(prono[idc], *mod_gamma)
             p1[p1>cdf_limite] = cdf_limite
             corr_o = gamma.ppf(p1, *obs_gamma)
             corr[idc] = corr_o
             data_corr[meses==mes, :] = corr
         elif tipo_ajuste == 'EG':
-            obs_gamma, mod_gamma = fit_gamma_param(estacion, mes, xo_min, xm_min)
+            obs_gamma, mod_gamma = fit_gamma_param(estacion, mes)
             mod_ecdf, mod_precdias, d1, d2 = fit_ecdf(estacion, 'precip', mes)
             p1 = mod_ecdf(prono[idc])
             p1[p1>cdf_limite] = cdf_limite
