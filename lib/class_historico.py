@@ -5,13 +5,10 @@ import pandas as pd
 import numpy as np
 from netCDF4 import Dataset, num2date
 import datetime as dt
-<<<<<<< HEAD
-from funciones_bhora import get_KC, run_bh_ora
+
 import sys
 sys.path.append('/home/osman/proyectos/pde_proyect/mdb_process/')
-from etp_func import CalcularETPconDatos
-=======
->>>>>>> 0bb19d1307f87ee4cbbc5f102b32b25dc6dcb07d
+
 
 from funciones_bhora import get_KC, run_bh_ora
 from funciones_etp import CalcularETPconDatos

@@ -77,7 +77,11 @@ class class_bhora:
         bhvar = {}
         for ky, co in zip(llaves, co1):
             bhvar[ky] = np.zeros(shape)
-            bhvar[ky][0,:] = df.loc[df['Fecha'] == fi, co].values
+            try:
+                bhvar[ky][0,:] = df.loc[df['Fecha'] == fi, co].values
+            except:
+                bhvar[ky][0,:] = np.nan
+
             if ky == 'ETP':
                 bhvar[ky][1:,:] = self.opera.etp
             elif ky == 'PP':
