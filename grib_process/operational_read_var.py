@@ -33,18 +33,33 @@ def get_ens_file(nvar, i_date):
         archivos = {}
         for vr in variables:
             lfls = []
-            for i in range(1, 5):
-                for ens in [0, 6, 12, 18]:
-                    d1 = i_date + dt.timedelta(hours=ens)
-                    str_d = d1.strftime('%Y%m%d%H')
-                    file_str = folder + vr + '/' + str(d1.year) + '/' + d1.strftime('%m') + '/'  +\
-                            vr + '.0' + str(i) + '.' + str_d + '*.grb2'
-                    aux_f = glob.glob(file_str)
-                    if aux_f:
-                        lfls.append(aux_f[0])
-                    else:
-                        lfls.append('vacio')
-            archivos[vr] = lfls
+            if ((i_date < dt.datetime(2021, 2, 23)) & (nvar != 'prate')) | ((nvar == 'prate') & (i_date < dt.datetime(2021, 6, 10))):
+                for i in range(4):
+                    for ens in [0, 6, 12, 18]:
+                        d1 = i_date - dt.timedelta(hours=24 * i) + dt.timedelta(hours=ens)
+                        str_d = d1.strftime('%Y%m%d%H')
+                        file_str = folder + nvar + '/' + str(d1.year) + '/' + d1.strftime('%m') + '/' + \
+                                nvar + '.01.' + str_d + '*.grb2'
+                        aux_f = glob.glob(file_str)
+                        if aux_f:
+                            lfls.append(aux_f[0])
+                        else:
+                            lfls.append('vacio')
+                archivos[vr] = lfls
+            else:
+
+                for i in range(1, 5):
+                    for ens in [0, 6, 12, 18]:
+                        d1 = i_date + dt.timedelta(hours=ens)
+                        str_d = d1.strftime('%Y%m%d%H')
+                        file_str = folder + vr + '/' + str(d1.year) + '/' + d1.strftime('%m') + '/'  +\
+                                vr + '.0' + str(i) + '.' + str_d + '*.grb2'
+                        aux_f = glob.glob(file_str)
+                        if aux_f:
+                            lfls.append(aux_f[0])
+                        else:
+                            lfls.append('vacio')
+                archivos[vr] = lfls
         if archivos:
             return archivos
         else:
@@ -53,19 +68,31 @@ def get_ens_file(nvar, i_date):
     else:
         archivos = []
         #while len(archivos) <= 16:
-        d1 = i_date
-        #print(ens+1, d1)
-        for i in range(1, 5):
-            for ens in [0, 6, 12, 18]:
-                d1 = i_date + dt.timedelta(hours=ens)
-                str_d = d1.strftime('%Y%m%d%H')
-                file_str = folder + nvar + '/' + str(d1.year) + '/' + d1.strftime('%m') + '/' + \
-                       nvar + '.0' + str(i) + '.' + str_d + '*.grb2'
-                aux_f = glob.glob(file_str)
-                if aux_f:
+        if ((i_date < dt.datetime(2021, 2, 23)) & (nvar != 'prate')) | ((nvar == 'prate') & (i_date < dt.datetime(2021, 6, 10))):
+            for i in range(4):
+                for ens in [0, 6, 12, 18]:
+                    d1 = i_date - dt.timedelta(hours=24 * i) + dt.timedelta(hours=ens)
+                    str_d = d1.strftime('%Y%m%d%H')
+                    file_str = folder + nvar + '/' + str(d1.year) + '/' + d1.strftime('%m') + '/' + \
+                            nvar + '.01.' + str_d + '*.grb2'
+                    aux_f = glob.glob(file_str)
+                    if aux_f:
                         archivos.append(aux_f[0])
-                else:
-                    archivos.append('vacio')
+                    else:
+                        archivos.append('vacio')
+        else:
+        #print(ens+1, d1)
+            for i in range(1, 5):
+                for ens in [0, 6, 12, 18]:
+                    d1 = i_date + dt.timedelta(hours=ens)
+                    str_d = d1.strftime('%Y%m%d%H')
+                    file_str = folder + nvar + '/' + str(d1.year) + '/' + d1.strftime('%m') + '/' + \
+                           nvar + '.0' + str(i) + '.' + str_d + '*.grb2'
+                    aux_f = glob.glob(file_str)
+                    if aux_f:
+                            archivos.append(aux_f[0])
+                    else:
+                        archivos.append('vacio')
         if archivos:
             return archivos
         else:
@@ -246,48 +273,51 @@ if var == 'hr':
 else:
     ens = 0
     for arch in archi:
-        grbs = xr.open_dataset(arch, engine='cfgrib')#, chunks={'lon_0':20, 'lat_0':20})
-        nvar = list(grbs.data_vars.keys())[0]
-        xe   = np.array(dic['lon_e']) % 360
-        ye   = dic['lat_e']
-        data = grbs[nvar].sel(longitude=xe, latitude=ye, method='nearest')
-        in_t = data.time.values
-        aux_d = data.to_pandas()
-        new_index = (in_t + aux_d.index).tz_localize('UTC')  # Horas UTC
-        new_index = new_index.tz_convert(tz_str)
-        datos = pd.Series(index=new_index, data=aux_d.array, dtype='float32')
-        if var == 'wnd10m':
-            fvar = 'velviento'
-            nvar1 = list(grbs.data_vars.keys())[1]
-            data1 = grbs[nvar1].sel(longitude=xe, latitude=ye, method='nearest')
-            aux_d1 = data1.to_pandas()
-            datos1 = pd.Series(index=new_index, data=aux_d1.array, dtype='float32')
-            spd = (datos1**2 + datos**2).apply(np.sqrt)
-            resu = spd.resample('1D').mean()
-        elif var == 'prate':
-            fvar = 'precip'
-            resu = datos.resample(rule='24H', closed='left', base=9).apply(calc_precip)
-            resu.index = resu.index.map(lambda t: t.replace(hour=0))
-        elif var == 'dswsfc':
-            fvar = 'radsup'
-            resu = datos.resample(rule='1D').apply(calc_radsup)
-        elif var == 'tmax':
-            fvar = var
-            resu = datos.resample(rule='1D').max()
-        elif var == 'tmin':
-            fvar = var
-            resu = datos.resample(rule='1D').min()
-        grbs.close()
+        if arch == 'vacio':
+            pass
+        else:
+            grbs = xr.open_dataset(arch, engine='cfgrib')#, chunks={'lon_0':20, 'lat_0':20})
+            nvar = list(grbs.data_vars.keys())[0]
+            xe   = np.array(dic['lon_e']) % 360
+            ye   = dic['lat_e']
+            data = grbs[nvar].sel(longitude=xe, latitude=ye, method='nearest')
+            in_t = data.time.values
+            aux_d = data.to_pandas()
+            new_index = (in_t + aux_d.index).tz_localize('UTC')  # Horas UTC
+            new_index = new_index.tz_convert(tz_str)
+            datos = pd.Series(index=new_index, data=aux_d.array, dtype='float32')
+            if var == 'wnd10m':
+                fvar = 'velviento'
+                nvar1 = list(grbs.data_vars.keys())[1]
+                data1 = grbs[nvar1].sel(longitude=xe, latitude=ye, method='nearest')
+                aux_d1 = data1.to_pandas()
+                datos1 = pd.Series(index=new_index, data=aux_d1.array, dtype='float32')
+                spd = (datos1**2 + datos**2).apply(np.sqrt)
+                resu = spd.resample('1D').mean()
+            elif var == 'prate':
+                fvar = 'precip'
+                resu = datos.resample(rule='24H', closed='left', base=9).apply(calc_precip)
+                resu.index = resu.index.map(lambda t: t.replace(hour=0))
+            elif var == 'dswsfc':
+                fvar = 'radsup'
+                resu = datos.resample(rule='1D').apply(calc_radsup)
+            elif var == 'tmax':
+                fvar = var
+                resu = datos.resample(rule='1D').max()
+            elif var == 'tmin':
+                fvar = var
+                resu = datos.resample(rule='1D').min()
+            grbs.close()
         # Seleccionamos datos de pronostico para prox 30 dias
-        sel_d = np.logical_and(resu.index >= arg_tz.localize(i_fecha),\
-                               resu.index <= arg_tz.localize(f_fecha))
-        resultado = resu.loc[sel_d]
-        in_t = dt.datetime.utcfromtimestamp(in_t.item()/10**9).strftime('%Y%m%d%H')
-        # Guardamos el archivo en la carpeta de salida
-        archivo_salida = cpta_salida + fvar + '_' + str(ens).zfill(2) +\
-                '_' + in_t + '.txt'
-        resultado.to_csv(archivo_salida, sep=';', float_format='%.2f', decimal=',',\
-                         date_format='%Y-%m-%d',index_label='fecha', header=[fvar])
+            sel_d = np.logical_and(resu.index >= arg_tz.localize(i_fecha),\
+                                   resu.index <= arg_tz.localize(f_fecha))
+            resultado = resu.loc[sel_d]
+            in_t = dt.datetime.utcfromtimestamp(in_t.item()/10**9).strftime('%Y%m%d%H')
+            # Guardamos el archivo en la carpeta de salida
+            archivo_salida = cpta_salida + fvar + '_' + str(ens).zfill(2) +\
+                    '_' + in_t + '.txt'
+            resultado.to_csv(archivo_salida, sep=';', float_format='%.2f', decimal=',',\
+                             date_format='%Y-%m-%d',index_label='fecha', header=[fvar])
         ens += 1
 
 print("--- %s seconds ---" % (time.time() - start_time))
