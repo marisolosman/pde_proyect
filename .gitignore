@@ -75,3 +75,9 @@ target/
 
 # Archivo Bash run 1 year
 run_test_bash.sh
+
+# data files
+datos/datos_op/resistencia/*
+
+#ignore .out files
+*.out

@@ -33,13 +33,13 @@ def get_ens_file(nvar, i_date):
         archivos = {}
         for vr in variables:
             lfls = []
-            if ((i_date < dt.datetime(2021, 2, 23)) & (nvar != 'prate')) | ((nvar == 'prate') & (i_date < dt.datetime(2021, 6, 10))):
+            if (i_date < dt.datetime(2021, 2, 23)):
                 for i in range(4):
                     for ens in [0, 6, 12, 18]:
                         d1 = i_date - dt.timedelta(hours=24 * i) + dt.timedelta(hours=ens)
                         str_d = d1.strftime('%Y%m%d%H')
-                        file_str = folder + nvar + '/' + str(d1.year) + '/' + d1.strftime('%m') + '/' + \
-                                nvar + '.01.' + str_d + '*.grb2'
+                        file_str = folder + vr + '/' + str(d1.year) + '/' + d1.strftime('%m') + '/' + \
+                                vr + '.01.' + str_d + '*.grb2'
                         aux_f = glob.glob(file_str)
                         if aux_f:
                             lfls.append(aux_f[0])
@@ -47,7 +47,6 @@ def get_ens_file(nvar, i_date):
                             lfls.append('vacio')
                 archivos[vr] = lfls
             else:
-
                 for i in range(1, 5):
                     for ens in [0, 6, 12, 18]:
                         d1 = i_date + dt.timedelta(hours=ens)
@@ -185,7 +184,6 @@ start_time = time.time()
 # ############################################
 var    = sys.argv[1]  # Segundo argumento variable
 f_str  = sys.argv[2]
-print(var)
 # Other options: tmax, tmin, dswsfc,
 #                hr, wnd10m
 if var == 'hrmean':  # Si se calcula HR hay que elegir que calcular:
@@ -228,7 +226,7 @@ archi = get_ens_file(var, i_fecha)
 cpta_salida = '../datos/datos_op/' + n_est[0] + '/' + fecha.strftime('%Y%m%d') + '/'
 os.makedirs(cpta_salida, exist_ok=True)
 dic['ofolder'] = cpta_salida
-print(dic)
+# print(dic)
 
 # Comenzamos el calculo en cada variable
 if var == 'hr':
@@ -243,7 +241,7 @@ if var == 'hr':
             print('Hum Esp 2m: ', f_q2)
             print('Tmp 2m: ', f_t2)
         else:
-            print(f_ps, f_q2, f_t2)
+            # print(f_ps, f_q2, f_t2)
             in_t = get_initial_date(f_ps)
             d_ps = get_data_from_grib(f_ps, dic['lat_e'], dic['lon_e'])
             d_q2 = get_data_from_grib(f_q2, dic['lat_e'], dic['lon_e'])
@@ -313,11 +311,10 @@ else:
                                    resu.index <= arg_tz.localize(f_fecha))
             resultado = resu.loc[sel_d]
             in_t = dt.datetime.utcfromtimestamp(in_t.item()/10**9).strftime('%Y%m%d%H')
-            # Guardamos el archivo en la carpeta de salida
-            archivo_salida = cpta_salida + fvar + '_' + str(ens).zfill(2) +\
-                    '_' + in_t + '.txt'
+            archivo_salida = cpta_salida + fvar + '_' + str(ens).zfill(2) + '_' + in_t + '.txt'
             resultado.to_csv(archivo_salida, sep=';', float_format='%.2f', decimal=',',\
                              date_format='%Y-%m-%d',index_label='fecha', header=[fvar])
+
         ens += 1
 
 print("--- %s seconds ---" % (time.time() - start_time))

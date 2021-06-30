@@ -7,8 +7,8 @@
 fecha='2021-02-'
 for dia in 02
 do
-    for var in 'tmax' 'tmin' 'dswsfc' 'wnd10m' 'prate' 'hrmean'
-#    for var in 'prate'
+#    for var in 'tmax' 'tmin' 'dswsfc' 'wnd10m' 'prate' 'hrmean'
+    for var in 'hrmean'
     do
         python /home/osman/proyectos/pde_proyect/grib_process/operational_read_var.py $var $fecha$dia &
         pid=$!
