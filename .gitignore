@@ -81,3 +81,6 @@ datos/datos_op/resistencia/*
 
 #ignore .out files
 *.out
+#ignore netcdf
+*.nc
+*.zip

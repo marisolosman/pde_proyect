@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # Datos INPUT
 # carpeta = '/home/osman/proyectos/pde_proyect/datos/datos_op/resistencia/20081203/'
 estacion = 'resistencia'
-fecha = '20210202'
+fecha = '20210224'
 correccion = True
 tipo_bh = 'profundo'
 cultivo = 'S1-VII'
@@ -39,7 +39,7 @@ xaxx = pd.date_range(start=comienzo.strftime('%Y-%m-%d'), end=c.dtimes[-1].strft
 exc_file = carpeta_input + 'balance_RESIS_FL40-45_S1-VII_NORTE.xls'
 hist_data = pd.read_excel(exc_file)
 fechas = [i.strftime('%m-%d') for i in hist_data.iloc[:, 0]]
-period = [i for i, e in enumerate(xaxx.strftime('%m-%d')) if e in set(fechas)]
+period = [i for i, e in enumerate(fechas) if e in set(xaxx.strftime('%m-%d'))]
 clim_times = pd.date_range(start=hist_data.iloc[period[0], 0].strftime('%Y-%m-%d'),
                            end=hist_data.iloc[period[-1], 0].strftime('%Y-%m-%d'))
 periodo_excesos = hist_data.iloc[period, 11]
@@ -47,7 +47,6 @@ periodo_def = hist_data.iloc[period, 10]
 min_historico = hist_data.iloc[period, 3]
 int_norm_inf = hist_data.iloc[period, 4]
 int_norm_sup = hist_data.iloc[period, 5]
-
 fig, ax = plt.subplots(nrows=1, ncols=3)
 imagen = ax[0].pcolormesh(c.ALMR, vmin=0, vmax=100)
 plt.colorbar(imagen, ax=ax[0])
