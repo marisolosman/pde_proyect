@@ -98,7 +98,7 @@ def get_ens_file(nvar, i_date):
             print('No hay archivos disponibles para la fecha indicada')
         exit()
 
-def get_data_from_grib(grb_file, xlat, xlon):
+def get_data_from_grib(grb_file, xlat, xlon, fecha):
     '''
     extract a data from gribfile for specified xlat and xlon
     returns a pandas dataframe
@@ -107,7 +107,8 @@ def get_data_from_grib(grb_file, xlat, xlon):
     nvar = list(grbs.data_vars.keys())[0]
     xe   = np.array(xlon) % 360
     ye   = xlat
-    data = grbs[nvar].sel(longitude=xe, latitude=ye, method='nearest')
+    tiempos = grbs.valid_time.values <= np.datetime64(fecha + dt.timedelta(days=5))
+    data = grbs[nvar].sel(longitude=xe, latitude=ye, step=tiempos, method='nearest')
     aux_d = data.to_pandas()
     grbs.close()
 
@@ -213,6 +214,9 @@ dic = {'dfolder':folder, 'var':var,
 tz_str = 'America/Argentina/Buenos_Aires'
 arg_tz = timezone('America/Argentina/Buenos_Aires')
 fecha = dt.datetime.strptime(f_str, '%Y-%m-%d')  # Test inicio de periodo por deficit.
+if fecha >= dt.datetime(2021, 2, 24):
+    fecha -= dt.timedelta(days=1)
+
 print(' --- Generando pronosticos para el: ' + fecha.strftime('%d-%m-%Y') + ' --- ')
 i_fecha = fecha
 f_fecha = (fecha + dt.timedelta(days=29))
@@ -243,9 +247,9 @@ if var == 'hr':
         else:
             # print(f_ps, f_q2, f_t2)
             in_t = get_initial_date(f_ps)
-            d_ps = get_data_from_grib(f_ps, dic['lat_e'], dic['lon_e'])
-            d_q2 = get_data_from_grib(f_q2, dic['lat_e'], dic['lon_e'])
-            d_t2 = get_data_from_grib(f_t2, dic['lat_e'], dic['lon_e'])
+            d_ps = get_data_from_grib(f_ps, dic['lat_e'], dic['lon_e'], dic['fdate'])
+            d_q2 = get_data_from_grib(f_q2, dic['lat_e'], dic['lon_e'], dic['fdate'])
+            d_t2 = get_data_from_grib(f_t2, dic['lat_e'], dic['lon_e'], dic['fdate'])
             d_hr = calc_hr(in_t, d_ps, d_q2, d_t2)
             if operacion == 'mean':
                 fvar = 'hrmean'
@@ -278,7 +282,8 @@ else:
             nvar = list(grbs.data_vars.keys())[0]
             xe   = np.array(dic['lon_e']) % 360
             ye   = dic['lat_e']
-            data = grbs[nvar].sel(longitude=xe, latitude=ye, method='nearest')
+            tiempos = grbs.valid_time.values <= np.datetime64(dic['fdate'] + dt.timedelta(days=5))
+            data = grbs[nvar].sel(longitude=xe, latitude=ye, step=tiempos, method='nearest')
             in_t = data.time.values
             aux_d = data.to_pandas()
             new_index = (in_t + aux_d.index).tz_localize('UTC')  # Horas UTC
@@ -287,7 +292,7 @@ else:
             if var == 'wnd10m':
                 fvar = 'velviento'
                 nvar1 = list(grbs.data_vars.keys())[1]
-                data1 = grbs[nvar1].sel(longitude=xe, latitude=ye, method='nearest')
+                data1 = grbs[nvar1].sel(longitude=xe, latitude=ye, step=tiempos, method='nearest')
                 aux_d1 = data1.to_pandas()
                 datos1 = pd.Series(index=new_index, data=aux_d1.array, dtype='float32')
                 spd = (datos1**2 + datos**2).apply(np.sqrt)

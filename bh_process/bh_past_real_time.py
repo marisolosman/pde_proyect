@@ -19,27 +19,36 @@ valid_times = []
 alm_calibrated = []
 alm_uncalibrated = []
 alm_observed = []
-for j in range(2011, 2012):
+for j in range(2011, 2021):
         fech = dt.datetime(j, 12, 1)
-        while (fech <= dt.datetime(j, 12, 7)):
+        while (fech <= dt.datetime(j + 1, 5, 1)):
             if (fech.weekday()==0) | (fech.weekday()==3):
-                a = class_operativa(estacion, fech.strftime('%Y%m%d'), True, 'GG')
-#               b = class_operativa(estacion, fecha, True, 'EG')
-#               c = class_operativa(estacion, fecha, True, 'Multi-Shift')
-                d = class_operativa(estacion, fech.strftime('%Y%m%d'), False)
-                for i in range(0, 16, 4):
-                    a.radsup[0, i: i + 4] = a.radsup[0, i]
-                    d.radsup[0, i: i + 4 ] = d.radsup[0, i]
-                    a.etp[0, i: i + 4] = a.etp[0, i]
-                    d.etp[0, i: i + 4 ] = d.etp[0, i]
-                aa = class_bhora(a, cultivo, tipo_bh)
-                dd = class_bhora(d, cultivo, tipo_bh)
-                start_times.append(fech)
-                valid_times.append(aa.dtimes)
-                alm_calibrated.append(aa.ALMR)
-                alm_uncalibrated.append(dd.ALMR)
-                period = [i for i, e in enumerate(aa.fecha_obs) if e in set(aa.dtimes)]
-                alm_observed.append(aa.almr_obs[period])
+                print(fech.strftime('%Y-%m-%d'))
+                try:
+                    if fech < dt.datetime(2021, 2, 24):
+                        a = class_operativa(estacion, fech.strftime('%Y%m%d'), True, 'GG')
+    #               b = class_operativa(estacion, fecha, True, 'EG')
+    #               c = class_operativa(estacion, fecha, True, 'Multi-Shift')
+                        d = class_operativa(estacion, fech.strftime('%Y%m%d'), False)
+                    else:
+                        fecha = fech - dt.timedelta(hours=24)
+                        a = class_operativa(estacion, fecha.strftime('%Y%m%d'), True, 'GG')
+                        d = class_operativa(estacion, fecha.strftime('%Y%m%d'), False)
+                    for i in range(0, 16, 4):
+                        a.radsup[0, i: i + 4] = a.radsup[0, i]
+                        d.radsup[0, i: i + 4 ] = d.radsup[0, i]
+                        a.etp[0, i: i + 4] = a.etp[0, i]
+                        d.etp[0, i: i + 4 ] = d.etp[0, i]
+                    aa = class_bhora(a, cultivo, tipo_bh)
+                    dd = class_bhora(d, cultivo, tipo_bh)
+                    start_times.append(fech)
+                    valid_times.append(aa.dtimes)
+                    alm_calibrated.append(aa.ALMR)
+                    alm_uncalibrated.append(dd.ALMR)
+                    period = [i for i, e in enumerate(aa.fecha_obs) if e in set(aa.dtimes)]
+                    alm_observed.append(aa.almr_obs[period])
+                except:
+                    print('missing date: ', fech.strftime('%Y-%m-%d'))
             fech += dt.timedelta(hours=24)
 
 alm_calibrated = np.array(alm_calibrated)
@@ -49,16 +58,24 @@ alm_observed = np.array(alm_observed)
 
 #ind = pd.MultiIndex.from_product((x, y), names=('anios', 'fec'))
 #ds_obs = ds_obs.assign(time=ind).unstack('time')
+print(alm_calibrated.shape)
+print(alm_uncalibrated.shape)
+print(start_times)
+print(valid_times.shape)
 
-ds = xr.Dataset({'alm_calibrated': (('start_date', 'step', 'ensemble'), alm_calibrated),
-                 'alm_uncalibrated': (('start_date', 'step', 'ensemble'), alm_uncalibrated),
-                 'alm_observed': (('start_date', 'step'), alm_observed),
-                'valid_date': (('start_date', 'step'), valid_times)},
-               coords={
-                   'start_date': start_times,
-                   'step':np.arange(-1, 30, 1),
-                   'ensemble': np.arange(1, 17)})
+try:
+    ds = xr.Dataset({'alm_calibrated': (('start_date', 'step', 'ensemble'), alm_calibrated),
+                     'alm_uncalibrated': (('start_date', 'step', 'ensemble'), alm_uncalibrated),
+                     'alm_observed': (('start_date', 'step'), alm_observed),
+                     'valid_date': (('start_date', 'step'), valid_times)},
+                    coords={
+                        'start_date': start_times,
+                        'step':np.arange(-1, 30, 1),
+                        'ensemble': np.arange(1, 17)})
+    ds.to_netcdf('/datos/osman/' + estacion + '_2011_2020_bh_forecasts.nc')
+except:
+    print('error')
 
-ds.to_netcdf('prueba.nc')
+print('fin')
 
 

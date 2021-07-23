@@ -77,11 +77,21 @@ class class_bhora:
         bhvar = {}
         for ky, co in zip(llaves, co1):
             bhvar[ky] = np.zeros(shape)
-            bhvar[ky][0,:] = df.loc[df['Fecha'] == fi, co].values
+            try:
+                bhvar[ky][0,:] = df.loc[df['Fecha'] == fi, co].values
+            except:
+                bhvar[ky][0,:] = np.nan
             if ky == 'ETP':
-                bhvar[ky][1:,:] = self.opera.etp
+                try:
+                    bhvar[ky][1:,:] = self.opera.etp
+                except:
+                    bhvar[ky][1:,:] = np.nan
             elif ky == 'PP':
-                bhvar[ky][1:,:] = self.opera.precip
+                try:
+                    bhvar[ky][1:,:] = self.opera.precip
+                except:
+                    bhvar[ky][1:,:] = np.nan
+
             setattr(self, ky, bhvar[ky])
 
     def calc_bhora(self):
