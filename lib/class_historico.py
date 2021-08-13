@@ -17,13 +17,14 @@ from oramdb_cultivos_excel import read_soil_parameter
 np.seterr(divide='ignore', invalid='ignore')
 
 class class_historico:
-    def __init__(self, estacion):
+    def __init__(self, estacion, leadtime):
         carpeta = '/home/osman/proyectos/pde_proyect/datos/datos_hist/'
         self.estacion = estacion
         self.carpeta_obs = carpeta + '/obs/'
         self.carpeta_mod = carpeta + '/modelo/' + estacion + '/'
+        self.leadtime = leadtime
         self.archivos_obs = glob.glob(self.carpeta_obs + '*.nc')
-        self.archivos_mod = glob.glob(self.carpeta_mod + '*.txt')
+        self.archivos_mod = glob.glob(self.carpeta_mod + '*' + '_' + '{:02d}'.format(leadtime) + '.txt')
         self.var = ['tmax', 'tmin','velviento', 'radsup', 'hrmean', 'precip', 'etp']
         self.dtimes = pd.date_range(start='1999-01-01', end='2010-12-31')  # Obtenemos los tiempos del prono
         self.get_latlon()

@@ -9,15 +9,16 @@ import matplotlib.pyplot as plt
 # Datos INPUT
 # carpeta = '/home/osman/proyectos/pde_proyect/datos/datos_op/resistencia/20081203/'
 estacion = 'resistencia'
-fecha = '20210224'
+fecha = '20210218'
 correccion = True
 tipo_bh = 'profundo'
 cultivo = 'S1-VII'
 carpeta_input = '/home/osman/proyectos/pde_proyect/datos/bhora_init/'
 carpeta_output = '/home/osman/proyectos/pde_proyect/pde_salidas/' + estacion + '/forecast_bh/'
 
-a = class_operativa(estacion, fecha, True, 'GG')
+
 b = class_operativa(estacion, fecha, False)
+a = class_operativa(estacion, fecha, True, 'GG')
 for i in range(0,16,4):
     a.radsup[0, i:i + 4] = a.radsup[0, i]
     b.radsup[0, i: i + 4 ] = b.radsup[0, i]
@@ -47,6 +48,7 @@ periodo_def = hist_data.iloc[period, 10]
 min_historico = hist_data.iloc[period, 3]
 int_norm_inf = hist_data.iloc[period, 4]
 int_norm_sup = hist_data.iloc[period, 5]
+
 fig, ax = plt.subplots(nrows=1, ncols=3)
 imagen = ax[0].pcolormesh(c.ALMR, vmin=0, vmax=100)
 plt.colorbar(imagen, ax=ax[0])
@@ -132,7 +134,7 @@ xlab = [i.strftime('%m-%d') for i in d.dtimes[::5]]
 ax[1].set_xticklabels(xlab, fontsize=8, rotation=45)
 ax[1].axes.set_xlabel('Fecha')
 ax[1].axes.set_ylabel('Milimetros')
-plt.title('Sin corregir')
+ax[1].set_title('Sin corregir')
 plt.suptitle('Perspectiva Reserva de agua en el suelo - ' + str.title(estacion) + ' - CI: ' + fecha)
 plt.savefig(carpeta_output + 'BH_ic_' + fecha + '_2.png')
 

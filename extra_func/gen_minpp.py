@@ -13,8 +13,9 @@ que permita tener un minimo de precipitacion mensual que mejor ajuste con lo que
 se tiene en la distribucion de precipitacion observada en terminos de la frecuencia
 de dias sin precipitacion.
 '''
-def select_data_period(df, mes):
+def select_data_period(df, fecha):
     nomvar = 'precip'
+    mes = fecha.month
     if mes - 1 <= 0:
         cnd = [12, 1, 2]
     elif mes + 1 >= 13:
@@ -47,14 +48,14 @@ meses = np.arange(1,13)
 #print(ppmin_int)
 resumen = pd.DataFrame(index=meses,columns=estaciones)
 for estacion in estaciones:
-    df = class_historico(estacion)
-    minimos_pp = np.empty(12)
-    for mes in np.arange(1,13):
-        do, dm = select_data_period(df, mes)
-        frec_o = calc_freq_pp(do, 0.1)
-        frec_m = [calc_freq_pp(dm, ppmin) for ppmin in ppmin_int]
-        pos_min = np.argmin(np.abs(np.array([a1 - frec_o for a1 in frec_m])))
-        minimos_pp[mes-1] = np.round(ppmin_int[pos_min], 2)
-    resumen.loc[:,estacion] = minimos_pp
-
-resumen.to_excel('../datos/minimos_pp.xls')
+    for idx in range(31):
+        df = class_historico(estacion, idx)
+        minimos_pp = np.empty(12)
+        for mes in np.arange(1,13):
+            do, dm = select_data_period(df, mes)
+            frec_o = calc_freq_pp(do, 0.1)
+            frec_m = [calc_freq_pp(dm, ppmin) for ppmin in ppmin_int]
+            pos_min = np.argmin(np.abs(np.array([a1 - frec_o for a1 in frec_m])))
+            minimos_pp[mes-1] = np.round(ppmin_int[pos_min], 2)
+            resumen.loc[:,estacion] = minimos_pp
+        resumen.to_excel('../datos/minimos_pp_' + '{:02d}'.format(idx) + '.xls')

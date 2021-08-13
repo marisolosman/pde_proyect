@@ -42,23 +42,21 @@ def calc_freq_pp(datos, ppmin):
     return frec
 
 
-
 estaciones = ['resistencia']
-ppmin_int = np.arange(0.1, 3, 0.01)
 meses = np.arange(1, 13)
-#print(ppmin_int)
 resumen = pd.DataFrame(index=meses, columns=estaciones)
 for estacion in estaciones:
-    df = class_historico(estacion)
-    minimos_pp = np.empty(12)
-    for mes in np.arange(1, 13):
-        do, dm = select_data_period(df, mes)
-        frec_o = calc_freq_pp(do, 0.1)
-        dm = dm[~np.isnan(dm)]
-        dm_sorted = np.sort(dm[dm!=0])
-        pos_min = np.int(np.shape(dm_sorted)[0] - (1 - frec_o) * np.shape(dm)[0])
-        ppmin_int = dm_sorted[pos_min-1]
-        frec_m = calc_freq_pp(dm, ppmin_int)
-        minimos_pp[mes-1] = np.round(ppmin_int, 2)
-    resumen.loc[:,estacion] = minimos_pp
-resumen.to_excel('../datos/minimos_pp.xls')
+    for idx in range(31):
+        df = class_historico(estacion, idx)
+        minimos_pp = np.empty(12)
+        for mes in np.arange(1, 13):
+            do, dm = select_data_period(df, mes)
+            frec_o = calc_freq_pp(do, 0.1)
+            dm = dm[~np.isnan(dm)]
+            dm_sorted = np.sort(dm[dm!=0])
+            pos_min = np.int(np.shape(dm_sorted)[0] - (1 - frec_o) * np.shape(dm)[0])
+            ppmin_int = dm_sorted[pos_min-1]
+            frec_m = calc_freq_pp(dm, ppmin_int)
+            minimos_pp[mes-1] = np.round(ppmin_int, 2)
+        resumen.loc[:,estacion] = minimos_pp
+        resumen.to_excel('../datos/datos_hist/modelo/minimos_pp_' + '{:02d}'.format(idx) + '.xls')
