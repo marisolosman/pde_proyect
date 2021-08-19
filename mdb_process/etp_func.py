@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import sys
-sys.path.append('../extra_func/')
+sys.path.append('/home/osman/proyectos/pde_proyect/extra_func/')
 from extras_func import clas_decada
 '''
 Listado de funciones para calcular ETP.
@@ -82,7 +82,11 @@ def CalcularETPconDatos(df, idestacion):
     list1 = df.columns
     list2 = ['Fecha', 'tmax', 'tmin', 'radsup', 'velviento', 'hrmean']
     result =  all(elem in list1  for elem in list2)
-    Latitud, longi = get_latlon_mdb(idestacion)
+    try:
+        Latitud, longi = get_latlon_mdb(idestacion)
+    except:
+        Latitud = -27
+        longi = -59
     if result:
         #print(' ################# Calculando ETP #################')
         a_juliano = np.array(df['Fecha'].dt.strftime('%j').values,

@@ -6,7 +6,7 @@ from funciones_bhora import get_KC
 from funciones_correccion import qq_correction
 
 import sys
-sys.path.append('../mdb_process/')
+sys.path.append('/home/osman/projects/pde_proyect/mdb_process/')
 from oramdb_cultivos_excel import read_soil_parameter
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -79,11 +79,21 @@ class class_bhora:
         bhvar = {}
         for ky, co in zip(llaves, co1):
             bhvar[ky] = np.zeros(shape)
-            bhvar[ky][0,:] = df.loc[df['Fecha'] == fi, co].values
+            try:
+                bhvar[ky][0,:] = df.loc[df['Fecha'] == fi, co].values
+            except:
+                bhvar[ky][0,:] = np.nan
             if ky == 'ETP':
-                bhvar[ky][1:,:] = self.opera.etp
+                try:
+                    bhvar[ky][1:,:] = self.opera.etp
+                except:
+                    bhvar[ky][1:,:] = np.nan
             elif ky == 'PP':
-                bhvar[ky][1:,:] = self.opera.precip
+                try:
+                    bhvar[ky][1:,:] = self.opera.precip
+                except:
+                    bhvar[ky][1:,:] = np.nan
+
             setattr(self, ky, bhvar[ky])
 
     def calc_bhora(self):
@@ -132,6 +142,7 @@ class class_bhora:
 
     def correct_bhora(self):
         print('CORRIGIENDO BH por BH')
+        print(self.ALMR)
         dato_c = qq_correction(self.ALMR[1:,:].copy(), 'ALMR', self.opera.dtimes,
                                self.opera.estacion)
         dato_c[np.isnan(self.ALMR[1:,:])] = np.nan

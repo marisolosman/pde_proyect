@@ -19,6 +19,7 @@ read_data_hist_mdb --> permite obtener un DF con datos historicos 1999-2010
 drv = '{Microsoft Access Driver (*.mdb, *.accdb)}'
 pwd = 'pw'
 db = 'c:/Felix/ORA/base_datos/BaseNueva/ora.mdb'
+db_csv = '/home/osman/proyectos/pde_proyect/ora.csv'
 
 def get_hist_sql_string(tv, ti, ide):
     """
@@ -187,6 +188,19 @@ def get_latlon_mdb(idestacion):
 
     return lat, lon
 
+def get_latlon_csv(idestacion):
+    '''
+    Get the Latitude and Longitude of station of database
+    '''
+    cols = ['ID', 'lat', 'lon']
+    df_d = pd.read_csv(db,)
+    lat = df.lat[df.ID==int(idestacion)]
+    lon = df.lon[df.ID==int(idestacion)]
+#    lat = df_d.Latitud.values
+#    lon = df_d.Longitud.values
+
+    return lat, lon
+
 
 def read_data_hist_mdb(var, tipo, idestacion):
     '''
@@ -336,7 +350,7 @@ def get_data_estacion_mdb(idestacion):
 if __name__ == "__main__":
     variables = ['tmax', 'tmin', 'radsup', 'hrmean', 'velviento', 'precip']
     for nomvar in variables:
-        df = pd.read_csv('../datos/estaciones.txt', sep=';')
+        df = pd.read_csv('/home/osman/proyectos/pde_proyect/datos/estaciones.txt', sep=';')
         for row in df.itertuples():
             print(nomvar)
             dfm = read_data_hist_mdb(nomvar, row.tipo_est, row.id_est)
