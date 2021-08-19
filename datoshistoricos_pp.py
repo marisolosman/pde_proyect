@@ -162,16 +162,16 @@ nomvar = 'precip'
 ens_mem = 1  # Miembro a utilizar como prueba
 #mes = 1  # Mes en el cual se realiza el analisis
 tipo_est = 'SMN'
-id_est = '107'
-estacion = 'resistencia'
+id_est = '100'
+estacion = 'junin'
 cdf_limite = .9999999
 # Datos a utilizar
-var_file = './datos/resistencia/data_final_' + nomvar + '.txt'
-# d_var = Media ensamble de precipitacion --> Ajustar Gamma
+var_file = './datos/datos_hist/modelo/' + estacion + '/data_final_' + nomvar + '.txt'# d_var = Media ensamble de precipitacion --> Ajustar Gamma
 # d_ens = Un miembro del ensamble con el que se construye el historico
 # de precipitacion.
 d_var, d_ens = variables_a_trabajar(nomvar, var_file, ens_mem)
 d_obs = read_pp_mdb(tipo_est, id_est, '1/1/1999', '12/31/2010')
+print(d_obs.tail())
 # pdf con figuras
 archivo = './diagnostico_pp.pdf'
 if os.path.isfile(archivo):
@@ -194,13 +194,15 @@ for xm_min in [0.1, 0.5, 1]:
                 print('--------', year_test, '----------')
                 id_fm = np.logical_and(d_ens.Fecha >= '01/01/'+str(year_test),
                                        d_ens.Fecha <= '12/31/'+str(year_test))
+                id_ob = np.logical_and(d_obs.Fecha >= '01/01/'+str(year_test),
+                                       d_obs.Fecha <= '12/31/'+str(year_test))
                 # data of year to work.
                 prono_m = d_ens.loc[id_fm, 'precip'].values
                 meses_m = d_ens.loc[id_fm, 'month'].values
                 # Corregimos los valores del mes de interes
                 prono = prono_m[meses_m == mes]
                 ppsincorr.extend(prono)
-                obsdelmes = d_obs.loc[id_fm, 'precip'].values[meses_m==mes]
+                obsdelmes = d_obs.loc[id_ob, 'precip'].values[meses_m==mes]
                 ppobs.extend(obsdelmes)
                 corregidos = prono_m[meses_m == mes]
                 # Corregimos 0's y NaN

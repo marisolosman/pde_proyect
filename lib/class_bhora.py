@@ -61,7 +61,9 @@ class class_bhora:
 
     def gen_init_cond(self):
         c1 = '../datos/bhora_init/'
-        infile = 'balance_RESIS_FL40-45_S1-VII_NORTE.xls'
+        # Cultivos BH
+        df = pd.read_csv('../datos/estaciones.txt', sep=';')
+        infile = df.loc[df['nom_est'] == self.opera.estacion,'archivo_in'].values[0]
         self.balance_real = c1 + infile
         df = pd.read_excel(c1 + infile, sheet_name='DatosDiarios')
         self.almr_obs = df['alm real'].values

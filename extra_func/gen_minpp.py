@@ -41,7 +41,7 @@ def calc_freq_pp(datos, ppmin):
 
 
 
-estaciones = ['resistencia']
+estaciones = ['resistencia','junin']
 ppmin_int = np.arange(0.1,2.01,0.01)
 meses = np.arange(1,13)
 #print(ppmin_int)

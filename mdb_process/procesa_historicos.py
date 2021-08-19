@@ -71,7 +71,6 @@ for nomvar, unid in zip(variables, unidades) :
     df = pd.read_csv('../datos/estaciones.txt', sep=';')
     for row in df.itertuples():
         print(row)
-
         dfm = read_data_hist_mdb(nomvar, row.tipo_est, row.id_est)
         # Datos para todas las fechas entre 01/01/1999 - 31/12/2010
         df0 = completar_faltante(dfm, nomvar)
@@ -79,10 +78,6 @@ for nomvar, unid in zip(variables, unidades) :
         datos_e['nombre_variable'] = row.nom_est
         datos_e['datos'] = df0[nomvar].values
         datos_e['units'] = unid
-        #
-        #df0.plot(y=nomvar)
-        #plt.show()
-
         if row.Index == 0:
             tiempos = f.createVariable('time', 'u8', ('time',))
             tiempos.units = time_unit
@@ -91,9 +86,8 @@ for nomvar, unid in zip(variables, unidades) :
             f.variables['time'][:] = nc.date2num(df0.index.to_pydatetime(),
                                                  units=time_unit,
                                                  calendar=calendar_u)
-
-            #print(nc.date2num(df0.index.to_pydatetime(), units=time_unit,
-            #                  calendar=calendar_u))
+        # Final del IF
+        # Se crea la variable con los datos recopilados
         crea_variable_estacion(f, datos_e)
 
     f.close()

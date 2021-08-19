@@ -88,11 +88,14 @@ class class_historico:
         self.mask_mod['etp'] = ds1['i_ETPm'].to_numpy()
 
     def calc_almr_mod(self):
+        # Cultivos BH
+        df = pd.read_csv('../datos/estaciones.txt', sep=';')
+        cultivo = df.loc[df['nom_est'] == self.estacion,'cultivo'].values[0]
         # Calculamos BHORA
         fi = self.dtimes[0] - dt.timedelta(days=1)
         bhvar = {'Fecha':self.dtimes, 'ETP': self.datos_mod['etp'], 'precip':self.datos_mod['precip']}
         DF1 = pd.DataFrame(index=np.arange(len(bhvar['precip'])), data=bhvar)
-        DF2 = run_bh_ora(DF1, self.id_ora,'S1-VII' , 'profundo',
+        DF2 = run_bh_ora(DF1, self.id_ora, cultivo, 'profundo',
                          **{'fecha_inicial':True, 'ini_date':fi, 'debug':False})
         #print(DF2.head())
         self.datos_mod['ALMR'] = np.squeeze(DF2.loc[1:,'ALMR'].to_numpy())
