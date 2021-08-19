@@ -46,6 +46,7 @@ for j in range(2011, 2021):
                     alm_calibrated.append(aa.ALMR)
                     alm_uncalibrated.append(dd.ALMR)
                     period = [i for i, e in enumerate(aa.fecha_obs) if e in set(aa.dtimes)]
+                    aux = np.empty((31,))
                     alm_observed.append(aa.almr_obs[period])
                 except:
                     print('missing date: ', fech.strftime('%Y-%m-%d'))
@@ -54,14 +55,8 @@ for j in range(2011, 2021):
 alm_calibrated = np.array(alm_calibrated)
 alm_uncalibrated = np.array(alm_uncalibrated)
 valid_times = np.array(valid_times)
-alm_observed = np.array(alm_observed)
+alm_observed = [i if len(i)==31 else np.empty((31, )) * np.nan for i in alm_observed]
 
-#ind = pd.MultiIndex.from_product((x, y), names=('anios', 'fec'))
-#ds_obs = ds_obs.assign(time=ind).unstack('time')
-print(alm_calibrated.shape)
-print(alm_uncalibrated.shape)
-print(start_times)
-print(valid_times.shape)
 
 try:
     ds = xr.Dataset({'alm_calibrated': (('start_date', 'step', 'ensemble'), alm_calibrated),
