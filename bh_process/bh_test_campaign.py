@@ -21,7 +21,7 @@ d = class_bhora(b, cultivo, tipo_bh)
 #e = class_bhora(b, cultivo, tipo_bh, True)
 
 #print(c.id_ora)
-#print(c.clt_data)
+print(c.clt_data)
 #print(c.kc)
 #print(dir(c))
 #open xls file
@@ -113,4 +113,3 @@ plt.title('Sin corregir')
 
 plt.suptitle('Perspectiva Reserva de agua en el suelo - ' + str.title(estacion) + ' - CI: ' + fecha)
 plt.savefig('BH_ic_' + fecha + '.png')
-

@@ -1,4 +1,4 @@
-nom_est;id_est;tipo_est
-resistencia;107;SMN
-junin;100;SMN
-venado_tuerto;119;SMN
+nom_est;id_est;tipo_est;cultivo;archivo_in
+resistencia;107;SMN;S1-VII;balance_RESIS_FL40-45_S1-VII_NORTE.xls
+junin;100;SMN;S1-V;balance_JUN_ROJAS_S1-V_PERG.xls
+venado_tuerto;119;SMN;S1-V;balance_VTUER_ROJAS_S1-V_PERG.xls
