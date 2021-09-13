@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+""" takes info about station (name, lat, lon) and create reforecast data to use to calibrate
+forecast
+M Osman and Felix Carrasco 2021
+"""
+# coding: utf-8
+from dask.distributed import Client
+import xarray as xr
+import os
+import sys
+import time
+import numpy as np
+import dask
+import pandas as pd
+os.environ['HDF5_USE_FILE_LOCKING'] = 'FALSE'
+
+# In[194]:
+
+def create_summary_file(var, fval, fmat, leadtime):
+    """
+    Function to create a summary file to save the results
+    """
+    columnas = ['fecha']
+    columnas.extend([var + '_' + hr for hr in ['00', '06', '12', '18']])
+    df = pd.DataFrame(columns=columnas)
+    df['fecha'] = [i + np.timedelta64(leadtime, 'D') for i in fval]
+    df[columnas[1::]] = fmat
+    return df
+# In[195]:
+# =======================================================================
+start_time = time.time()
+file_name = ['velviento', 'tmin', 'tmax', 'hrmean', 'radsup', 'precip']
+var_name = ['velviento', 'tmin', 'tmax', 'hrmean', 'dswrf', 'prate']
+
+nest    = sys.argv[1]  # Segundo argumento variable
+lat_e  = sys.argv[2]
+lon_e = sys.argv[3]
+
+# Lat-Lon Resistencia: -27.45/-59.05 (SMN)
+# Lat-Lon Junin: -34.55/-60.92 (SMN)
+lat_e = [-34.55]
+lon_e = [-60.92]
+n_est = ['junin']
+
+folder = '/datos/osman/datos_pde_project/'
+# Diccionario con datos generales
+dic = {'dfolder':folder, 'lat_e':lat_e[0], 'lon_e':lon_e[0],
+       'n_est':n_est[0]}
+
+# Abrimos una carpeta y guardamos los archivos ahi
+cpta_salida = '../datos/datos_hist/modelo/' + n_est[0] + '/' 
+os.makedirs(cpta_salida, exist_ok=True)
+dic['ofolder'] = cpta_salida
+
+tiempos = np.arange(np.datetime64('1999-01-01').astype('datetime64[ns]'),
+                    np.datetime64('2011-01-01').astype('datetime64[ns]'), 
+                    np.timedelta64(1, 'D')).astype('datetime64[ns]')
+for idx, v  in enumerate(file_name):
+    ds = xr.open_dataset(dic['dfolder'] + 'data_final_' + v + '_1999-2010_arg.nc',
+                         chunks={'time':1000, 'step':31})
+    ds = ds.sel(latitude=dic['lat_e'], longitude=dic['lon_e'], method='nearest')
+    ds = ds.transpose("time", "step")
+    ds = np.reshape(ds[var_name[idx]].values, [int(len(ds.time.values)/4), 4, 31])
+    ds[:, 2::, 0] = np.nan
+    for i in range(31):
+        df = create_summary_file(v, tiempos, ds[:, :, i], i)
+        sel_col = list(df)[1::]
+        df[sel_col] = df[sel_col].apply(pd.to_numeric, errors='ignore')
+        n_file = dic['ofolder'] + 'data_final_' + v + '_' + "{:02d}".format(i) + '.txt'
+        df.to_csv(n_file, sep=';', float_format='%.2f', decimal=',',
+                  date_format='%Y-%m-%d')
+
+print("--- %s seconds ---" % (time.time() - start_time))
