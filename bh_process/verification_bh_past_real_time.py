@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 # DATOS INPUT
 estacion = 'resistencia'
 
-FILE = '/datos/osman/' + estacion + '_2011_2020_bh_forecasts.nc'
+FILE = '/datos/osman/datos_pde_project/' + estacion + '_2011_2020_bh_forecasts.nc'
 
 
 ds = xr.open_dataset(FILE)
