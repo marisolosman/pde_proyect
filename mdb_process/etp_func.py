@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 import sys
-sys.path.append('/home/osman/proyectos/pde_proyect/extra_func/')
+sys.path.append('../extra_func/')
 from extras_func import clas_decada
 '''
 Listado de funciones para calcular ETP.

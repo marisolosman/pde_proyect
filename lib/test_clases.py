@@ -1,9 +1,10 @@
 from class_historico import class_historico
 import numpy as np
 import matplotlib.pyplot as plt
-a = class_historico('resistencia')
+
+a = class_historico('trenque_lauquen', 10)
 t1 = a.dtimes
-nomvar = 'ALMR'
+nomvar = 'precip'
 radsup_obs = a.datos_obs[nomvar]
 mo_radsup = a.mask_obs[nomvar]
 m_radsup = a.mask_mod[nomvar]

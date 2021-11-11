@@ -2,22 +2,33 @@ import glob
 import pandas as pd
 import numpy as np
 import datetime as dt
+from dateutil.relativedelta import relativedelta
 from funciones_bhora import get_KC
 from funciones_correccion import qq_correction
 
 import sys
-sys.path.append('/home/osman/projects/pde_proyect/mdb_process/')
+sys.path.append('../mdb_process/')
 from oramdb_cultivos_excel import read_soil_parameter
 
 np.seterr(divide='ignore', invalid='ignore')
 
 class class_bhora:
-    def __init__(self, opera, clt, t_bh, corr_bh=False):
+    def __init__(self, opera, clt, t_bh, yr_c, corr_bh=False):
+        '''
+        opera: Objeto con las variables operativas para calcular el BH
+        clt: String con el cultivo para el cual se quiere calcular el BH
+        t_bh: String con el tipo de balance a utilizar: 'Superficial' o 'Profundo'
+        yr_c: int con el año del comienzo de campaña -> se utiliza para obtener
+              los datos del grafico (inicio, fin y periodos criticos)
+        corr_bh: Logical que indica si se realiza correccion al ALMR utilizando el
+                 historico de ALMR
+        '''
         carpeta = '../datos/salidas_op/'
         self.opera = opera
         self.fecha = opera.fecha
         self.clt = clt
         self.t_bh = t_bh
+        self.yr_c = yr_c
         # Calculamos los datos necesarios para correr BH-ORA
         self.get_times()
         self.get_id()
@@ -27,6 +38,9 @@ class class_bhora:
         self.gen_init_cond()
         # Calculamos el BH
         self.calc_bhora()
+        # Agregamos datos para los graficos
+        self.get_plot_data()
+        # Corregimos por ALM en caso se requiera
         if corr_bh:
             self.correct_bhora()
 
@@ -39,8 +53,12 @@ class class_bhora:
         archivo = '../datos/datos_hist/obs/tmax_199901_201012.nc'
         nc = Dataset(archivo, "r")
         id = nc.variables[self.opera.estacion].id_ora
+        n1 = nc.variables[self.opera.estacion].long_name
+        p1 = nc.variables[self.opera.estacion].provincia
+        t1 = nc.variables[self.opera.estacion].tipo
         nc.close()
         self.id_ora = id
+        self.data_estacion = {'nombre':n1, 'prov':p1, 'tipoe':t1}
 
     def get_cultivo_data(self):
         ds = read_soil_parameter(self.id_ora, self.clt, self.t_bh)
@@ -68,6 +86,11 @@ class class_bhora:
         df = pd.read_excel(c1 + infile, sheet_name='DatosDiarios')
         self.almr_obs = df['alm real'].values
         self.fecha_obs = df['Fecha'].dt.to_pydatetime()
+        df = df.assign(juliano=df['Fecha'].dt.dayofyear)
+        minimos = df.groupby('juliano').min()
+        self.almr_min = minimos['alm real'].to_numpy()
+        self.almr_min_jul = np.arange(1,367)
+        #
         shape = (len(self.dtimes), self.opera.nens)
         fi = self.dtimes[0]
         # Las columnas para extraer datos iniciales
@@ -96,6 +119,85 @@ class class_bhora:
 
             setattr(self, ky, bhvar[ky])
 
+    def get_plot_data(self):
+        c1 = '../datos/oramdb/DatosGraficos.xlsx'
+        df0 = pd.read_excel(c1, sheet_name='Dptos Fenologia')
+        df1 = pd.read_excel(c1, sheet_name='Etapas')
+        df2 = pd.read_excel(c1, sheet_name='PriodosCriticos')
+        df3 = pd.read_excel(c1, sheet_name='ResumenPDE')
+        # Fecha Inicio: Siembra; Fecha Fin: Cosecha + 1 mes
+        cnd_i = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == 'Siembra')
+        cnd_f = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == 'Cosecha')
+        mesi = df3.loc[cnd_i, 'Mes'].values[0]
+        diai = df3.loc[cnd_i, u'Día'].values[0]
+        self.fecha_inicio_plot = dt.datetime(self.yr_c, mesi, diai)
+        mesf = df3.loc[cnd_f, 'Mes'].values[0]
+        diaf = df3.loc[cnd_f, u'Día'].values[0]
+        self.fecha_fin_plot = dt.datetime(self.yr_c+1, mesf, diaf) + relativedelta(months=1)
+        # Periodo Critico Deficit
+        # Inicio
+        cnd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt)
+        cultivo = df3.loc[cnd,'Ncultivo'].values[0]
+        di = int(df2.loc[df2.CULTIVO == cultivo,'di'].values[0])
+        E_di = df2.loc[df2.CULTIVO == cultivo,u'INICIO DÉFICIT'].values[0]
+        cnd_id = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == E_di)
+        mes_id = df3.loc[cnd_id, 'Mes'].values[0]
+        dia_id = df3.loc[cnd_id, u'Día'].values[0]
+        self.fecha_inicio_deficit = dt.datetime(self.yr_c+1, mes_id, dia_id) + dt.timedelta(days=di)
+        # Fin
+        cnd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt)
+        cultivo = df3.loc[cnd,'Ncultivo'].values[0]
+        df = int(df2.loc[df2.CULTIVO == cultivo,'df'].values[0])
+        E_df = df2.loc[df2.CULTIVO == cultivo,u'FIN DÉFICIT'].values[0]
+        cnd_fd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == E_df)
+        mes_fd = df3.loc[cnd_fd, 'Mes'].values[0]
+        dia_fd = df3.loc[cnd_fd, u'Día'].values[0]
+        self.fecha_fin_deficit = dt.datetime(self.yr_c+1, mes_fd, dia_fd) + dt.timedelta(days=df)
+        # Periodo Critico Excesos
+        # Inicio
+        cnd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt)
+        cultivo = df3.loc[cnd,'Ncultivo'].values[0]
+        di = int(df2.loc[df2.CULTIVO == cultivo,'ei'].values[0])
+        E_di = df2.loc[df2.CULTIVO == cultivo,u'INICIO EXCESOS'].values[0]
+        cnd_id = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == E_di)
+        mes_id = df3.loc[cnd_id, 'Mes'].values[0]
+        dia_id = df3.loc[cnd_id, u'Día'].values[0]
+        self.fecha_inicio_excesos = dt.datetime(self.yr_c+1, mes_id, dia_id) + dt.timedelta(days=di)
+        # Fin
+        cnd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt)
+        cultivo = df3.loc[cnd,'Ncultivo'].values[0]
+        df = int(df2.loc[df2.CULTIVO == cultivo,'ef'].values[0])
+        E_df = df2.loc[df2.CULTIVO == cultivo,u'FIN EXCESOS'].values[0]
+        cnd_fd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == E_df)
+        mes_fd = df3.loc[cnd_fd, 'Mes'].values[0]
+        dia_fd = df3.loc[cnd_fd, u'Día'].values[0]
+        self.fecha_fin_excesos = dt.datetime(self.yr_c+1, mes_fd, dia_fd) + dt.timedelta(days=df)
+
+    def calc_min_hist(self):
+        c1 = '../datos/bhora_init/'
+        df = pd.read_csv('../datos/estaciones.txt', sep=';')
+        infile = df.loc[df['nom_est'] == self.opera.estacion,'archivo_in'].values[0]
+        df = pd.read_excel(c1 + infile, sheet_name='DatosDiarios')
+        df = df.assign(juliano=df['Fecha'].dt.dayofyear)
+        minimos = df.groupby('juliano').min()
+        almr_min = minimos['alm real'].to_numpy()
+        jul_min = np.arange(1,367)
+        yri = self.fecha_inicio_plot.year
+        jui = self.fecha_inicio_plot.timetuple().tm_yday
+        yrf = self.fecha_fin_plot.year
+        juf = self.fecha_fin_plot.timetuple().tm_yday
+        feh = pd.date_range(self.fecha_inicio_plot, self.fecha_fin_plot)
+        if jui > juf:# e.g 340 y 120 (campaña 2002-2003)
+            ju1 = dt.datetime(yri,12,31).timetuple().tm_yday
+            alm1 = almr_min[jui-1:ju1]
+            alm2 = almr_min[0:juf]
+            al_min = np.hstack([alm1,alm2])
+        if jui < juf:
+            alm1 = almr_min[jui-1:juf]
+            al_min = alm1
+
+        return al_min, feh
+        
     def calc_bhora(self):
         #print('######## ')
         Nt = len(self.ALM)
@@ -142,7 +244,6 @@ class class_bhora:
 
     def correct_bhora(self):
         print('CORRIGIENDO BH por BH')
-        print(self.ALMR)
         dato_c = qq_correction(self.ALMR[1:,:].copy(), 'ALMR', self.opera.dtimes,
                                self.opera.estacion)
         dato_c[np.isnan(self.ALMR[1:,:])] = np.nan

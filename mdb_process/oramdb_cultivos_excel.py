@@ -106,10 +106,6 @@ def read_fenologia(idestacion, cultivo):
     if not aux_PatKC.empty:
         PatKC = aux_PatKC.values[0]
         # Select Julian Days for specified crop
-        SQL1 = '''
-               SELECT * FROM FenologiaPorZona
-               WHERE patronKc = {}
-               '''.format(str(PatKC))
         dh0 = pd.read_excel(xlsf + 'FenologiaPorZona.xlsx')
         FenZona = dh0.loc[dh0.patronKc == PatKC]
         df.rename(columns={'id':'idEtapa'}, inplace=True)

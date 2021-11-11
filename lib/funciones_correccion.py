@@ -71,7 +71,7 @@ def fit_ecdf(estacion, nomvar, fecha, leadtime, year_test='None'):
     """
     do, dm = select_data_period(estacion, nomvar, fecha, leadtime)
     #
-    minimos_pp = pd.read_excel('../datos/datos_hist/modelo/minimos_pp_' '{:02d}'.format(leadtime) + '.xls', index_col=0)
+    minimos_pp = pd.read_excel('../datos/datos_hist/modelo/minimos_pp_' '{:02d}'.format(leadtime) + '.xlsx', index_col=0)
     min_pp = minimos_pp.loc[fecha.month, estacion]
     if nomvar == 'precip':
         ppo_data = precipitation_days(do, 0.1)
@@ -91,7 +91,7 @@ def fit_gamma_param(estacion, fecha, leadtime, year_test='None'):
     cdf_limite = .9999999
     # Minimos de precipitacion (obs fijo = 0.1, modelo el que mejor ajusta a frec)
     xo_min = 0.1
-    minimos_pp = pd.read_excel('../datos/datos_hist/modelo/minimos_pp_' + '{:02d}'.format(leadtime)+ '.xls', index_col=0)
+    minimos_pp = pd.read_excel('../datos/datos_hist/modelo/minimos_pp_' + '{:02d}'.format(leadtime)+ '.xlsx', index_col=0)
     xm_min = minimos_pp.loc[fecha.month, estacion]
     # Days with precipitacion
     ppo_data = precipitation_days(do, xo_min)
@@ -131,7 +131,7 @@ def qq_correction_pp(data, dtimes, estacion, tipo_ajuste='GG'):
     data_corr = np.empty(data.shape)
     data_corr[:] = np.nan
     for idx, fecha in enumerate(dtimes):
-        minimos_pp = pd.read_excel('../datos/datos_hist/modelo/minimos_pp_' + '{:02d}'.format(idx)+ '.xls', index_col=0)
+        minimos_pp = pd.read_excel('../datos/datos_hist/modelo/minimos_pp_' + '{:02d}'.format(idx)+ '.xlsx', index_col=0)
         xm_min = minimos_pp.loc[fecha.month, estacion]
         prono = data[idx, :]
         corr = data[idx,:]

@@ -7,6 +7,7 @@ __pycache__/
 
 # Figuras
 *.png
+*.jpg
 # Archivos Excel
 *.xlsx
 *.xls
@@ -77,9 +78,10 @@ target/
 run_test_bash.sh
 
 # data files
-datos/datos_op/resistencia/*
-datos/datos_hist/resistencia/*
-data_final_*.txt
+datos/datos_op/
+datos/datos_hist/
+datos/bhora_init/
+
 #ignore .out files
 *.out
 #ignore netcdf

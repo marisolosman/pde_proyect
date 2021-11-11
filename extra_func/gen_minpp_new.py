@@ -1,6 +1,6 @@
 import sys
 # sys.path.append('c:/felix/ora/python_scripts/pde_proyect/lib/')
-sys.path.append('/home/osman/proyectos/pde_proyect/lib/')
+sys.path.append('../lib/')
 from class_historico import class_historico
 import numpy as np
 import pandas as pd
@@ -42,11 +42,13 @@ def calc_freq_pp(datos, ppmin):
     return frec
 
 
-estaciones = ['resistencia']
+estaciones = ['concordia','junin', 'resistencia', 'rio_cuarto', 'trenque_lauquen', 'venado_tuerto']
 meses = np.arange(1, 13)
 resumen = pd.DataFrame(index=meses, columns=estaciones)
-for estacion in estaciones:
-    for idx in range(31):
+for idx in range(31):
+    print(idx)
+    for estacion in estaciones:
+        print(estacion)
         df = class_historico(estacion, idx)
         minimos_pp = np.empty(12)
         for mes in np.arange(1, 13):
@@ -59,4 +61,4 @@ for estacion in estaciones:
             frec_m = calc_freq_pp(dm, ppmin_int)
             minimos_pp[mes-1] = np.round(ppmin_int, 2)
         resumen.loc[:,estacion] = minimos_pp
-        resumen.to_excel('../datos/datos_hist/modelo/minimos_pp_' + '{:02d}'.format(idx) + '.xls')
+    resumen.to_excel('../datos/datos_hist/modelo/minimos_pp_' + '{:02d}'.format(idx) + '.xlsx')

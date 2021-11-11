@@ -21,9 +21,9 @@ def ensemble_plot_base():
     ds = pd.read_excel(archivo, sheet_name=u'DatosGráfico')
     PMP = pd.unique(ds['Punto de marchitez'])[0]
     CC = pd.unique(ds['Capacidad de campo'])[0]
-    dh = [datetime(2009,2,17), datetime(2009,4,5), datetime(2009,4,5), datetime(2009,2,17)]
-    eh = [datetime(2009,4,8), datetime(2009,4,17), datetime(2009,4,17), datetime(2009,4,8)]
-    fechas_limite = [datetime(2008,11,25), datetime(2009,6,30)]
+    dh = [datetime(2003,2,17), datetime(2003,4,5), datetime(2003,4,5), datetime(2003,2,17)]
+    eh = [datetime(2003,4,8), datetime(2003,4,17), datetime(2003,4,17), datetime(2003,4,8)]
+    fechas_limite = [datetime(2002,11,25), datetime(2003,6,30)]
     # Grafico
     fig, ax = plt.subplots()
     fig.set_size_inches(8, 5)
