@@ -77,9 +77,8 @@ target/
 run_test_bash.sh
 
 # data files
-datos/datos_op/*/*
-datos/datos_hist/resistencia/*
-data_final_*.txt
+datos/*
+./data_final_*.txt
 #ignore .out files
 *.out
 #ignore netcdf
