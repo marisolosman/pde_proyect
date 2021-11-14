@@ -7,6 +7,7 @@ __pycache__/
 
 # Figuras
 *.png
+*.jpg
 # Archivos Excel
 *.xlsx
 *.xls
@@ -77,6 +78,7 @@ target/
 run_test_bash.sh
 
 # data files
+
 datos/*
 ./data_final_*.txt
 #ignore .out files

@@ -125,31 +125,41 @@ def read_SMN_data(var, tipo, idestacion):
 
     SQL_s1, SQL_s2 = get_hist_sql_string(var, tipo, idestacion)
     df1 = pd.read_sql_query(SQL_s1, cnxn)
-
     df2 = pd.read_sql_query(SQL_s2, cnxn)  # De tabla horaria
     cnxn.close()
-    df2['H'] = df2['Hora'].apply(lambda x: '{0:0>2}'.format(x))
-    df2['D'] = pd.to_datetime(df2['Fecha'].dt.date.astype(str) +\
-                              ' ' + df2['H'].astype(str),
-                              format='%Y-%m-%d %H')
-    df2['D_UTC'] = df2['D'].dt.tz_localize('UTC')
-    df2['D_LOCAL'] = df2['D_UTC'].dt.tz_convert('America/Argentina/Buenos_Aires')
-    if var == 'wnd10m' or var == 'velviento':
-        df3 = df2.groupby([df2['D_LOCAL'].dt.date])['Viento'].mean()
-        df3 = df3.iloc[1::]
-        aux = {'Fecha': df3.index, 'Viento':df3.values}
-        df4 = pd.DataFrame(index=np.arange(0, len(df3)),
-                           columns=['Fecha','Viento'], data=aux)
-        # Transformamos ambas series de km/hora --> m/s
-        df1['Viento'] = (1./3.6) * df1['Viento']
-        df4['Viento'] = (1./3.6) * df4['Viento']
-    elif var == 'hrmean':
-        df3 = df2.groupby([df2['D_LOCAL'].dt.date])['Humedad'].mean()
-        df3 = df3.iloc[1::]
-        aux = {'Fecha': df3.index, 'Humedad':df3.values}
-        df4 = pd.DataFrame(index=np.arange(0, len(df3)),
-                           columns=['Fecha','Humedad'], data=aux)
-    #
+    if df2.empty:
+        fechas = pd.date_range('2008-01-01','2010-12-31')
+        if var == 'wnd10m' or var == 'velviento':
+            aux = {'Fecha': fechas,'Viento':np.nan*np.ones(len(fechas))}
+            df4 = pd.DataFrame(index=np.arange(0, len(fechas)),
+                               columns=['Fecha','Viento'], data=aux)
+        elif var == 'hrmean':
+            aux = {'Fecha': fechas,'Humedad':np.nan*np.ones(len(fechas))}
+            df4 = pd.DataFrame(index=np.arange(0, len(fechas)),
+                               columns=['Fecha','Humedad'], data=aux)
+    else:
+        df2['H'] = df2['Hora'].apply(lambda x: '{0:0>2}'.format(x))
+        df2['D'] = pd.to_datetime(df2['Fecha'].dt.date.astype(str) +\
+                                  ' ' + df2['H'].astype(str),
+                                  format='%Y-%m-%d %H')
+        df2['D_UTC'] = df2['D'].dt.tz_localize('UTC')
+        df2['D_LOCAL'] = df2['D_UTC'].dt.tz_convert('America/Argentina/Buenos_Aires')
+        if var == 'wnd10m' or var == 'velviento':
+            df3 = df2.groupby([df2['D_LOCAL'].dt.date])['Viento'].mean()
+            df3 = df3.iloc[1::]
+            aux = {'Fecha': df3.index, 'Viento':df3.values}
+            df4 = pd.DataFrame(index=np.arange(0, len(df3)),
+                               columns=['Fecha','Viento'], data=aux)
+            # Transformamos ambas series de km/hora --> m/s
+            df1['Viento'] = (1./3.6) * df1['Viento']
+            df4['Viento'] = (1./3.6) * df4['Viento']
+        elif var == 'hrmean':
+            df3 = df2.groupby([df2['D_LOCAL'].dt.date])['Humedad'].mean()
+            df3 = df3.iloc[1::]
+            aux = {'Fecha': df3.index, 'Humedad':df3.values}
+            df4 = pd.DataFrame(index=np.arange(0, len(df3)),
+                               columns=['Fecha','Humedad'], data=aux)
+        #
     df1['Fecha'] = df1['Fecha'].dt.strftime('%Y-%m-%d')
     df = pd.concat([df1, df4], axis=0, ignore_index=True)
     df['Fecha'] = pd.to_datetime(df.Fecha)

@@ -38,7 +38,7 @@ start = time.time()
 carpeta = '../datos/datos_op/resistencia/'
 estacion = 'resistencia'
 fechas = [os.path.basename(c1) for c1 in glob.glob(carpeta + '200*')]
-correccion = False
+correccion = True
 tipo_bh = 'profundo'
 cultivo = 'S1-VII'
 
@@ -48,11 +48,16 @@ fig, ax = ensemble_plot_base()
 
 for fecha, color1, color2 in zip(fechas, col_ens, col_med):
     a = class_operativa(estacion, fecha, correccion, 'GG')
-    c = class_bhora(a, cultivo, tipo_bh, True)
+    c = class_bhora(a, cultivo, tipo_bh)
+
+    b = class_operativa(estacion, fecha, False)
+    d = class_bhora(b, cultivo, tipo_bh)
+    alex = np.nanmean(c.ALMR, axis=1) - np.nanmean(d.ALMR, axis=1)
+    print(alex)
     #ax.plot(c.dtimes, c.ALMR, color=color1, zorder=2)
     ax.plot(c.dtimes, np.nanmean(c.ALMR, axis=1), color=color2, zorder=3)
 
-plt.savefig('4_figura_correccion_BH-ALMR.png', dpi=200)
+plt.savefig('6_figura_correccion_BH-ALMR_LeadTime.png', dpi=200)
 plt.close(fig)
 
 # ---------------------------

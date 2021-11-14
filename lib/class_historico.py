@@ -14,7 +14,7 @@ np.seterr(divide='ignore', invalid='ignore')
 
 class class_historico:
     def __init__(self, estacion, leadtime):
-        carpeta = '/home/osman/proyectos/pde_proyect/datos/datos_hist/'
+        carpeta = '../datos/datos_hist/'
         self.estacion = estacion
         self.carpeta_obs = carpeta + '/obs/'
         self.carpeta_mod = carpeta + '/modelo/' + estacion + '/'
@@ -30,7 +30,6 @@ class class_historico:
         #self.calc_almr_mod()
 
     def get_latlon(self):
-        from netCDF4 import Dataset
         archivo = '../datos/datos_hist/obs/tmax_199901_201012.nc'
         nc = Dataset(archivo, "r")
         Latitud = nc.variables[self.estacion].lat
@@ -54,12 +53,15 @@ class class_historico:
         mask = {}
         for archivo in self.archivos_obs:
             nomvar = os.path.basename(archivo).split('_')[0]
-            nc = Dataset(archivo, "r")
+            nc = Dataset(archivo, 'r')
             fill_value = nc.variables[self.estacion]._FillValue
             datos[nomvar] = nc.variables[self.estacion][:]
             mask[nomvar] = np.array(datos[nomvar] == fill_value)
+            nc.close()
+
         self.datos_obs = datos
         self.mask_obs = mask
+        nc = Dataset(self.archivos_obs[0], 'r')
         self.id_ora = nc.variables[self.estacion].id_ora
         self.lat = nc.variables[self.estacion].lat
         self.lon = nc.variables[self.estacion].lon

@@ -1,4 +1,7 @@
 nom_est;id_est;tipo_est;cultivo;archivo_in
-resistencia;107;SMN;S1-VII;balance_RESIS_FL40-45_S1-VII_NORTE.xls
-junin;100;SMN;S1-V;balance_JUN_ROJAS_S1-V_PERG.xls
-venado_tuerto;119;SMN;S1-V;balance_VTUER_ROJAS_S1-V_PERG.xls
+resistencia;107;SMN;S1-VII;balance_RESIS_FL40-45_S1-VII_NORTE_montecarlo.xls
+junin;100;SMN;S1-V;balance_JUN_ROJAS_S1-V_PERG_montecarlo.xls
+concordia;105;SMN;S1-V;balance_CONC_YERUA_S1-V_PARA_montecarlo.xls
+rio_cuarto;39;SMN;S1-V;balance_RCTO_FL100-35_S1-V_VMAR_montecarlo.xls
+trenque_lauquen;54;SMN;S1-IV;balance_TLAU_FA100-35_S1-IV_TLAU_montecarlo.xls
+venado_tuerto;119;SMN;S1-V;balance_VTUER_ROJAS_S1-V_PERG_montecarlo.xls
