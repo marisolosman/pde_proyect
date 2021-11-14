@@ -12,18 +12,21 @@ import matplotlib.pyplot as plt
 # Datos INPUT
 # carpeta = '/home/osman/proyectos/pde_proyect/datos/datos_op/resistencia/20081203/'
 
-ini_camp = 2002
-fecha = '20030217'
-correccion = False
+ini_camp = 2020
+fecha = '20210307'
+correccion = True
 tipo_bh = 'profundo'
 
 df = pd.read_csv('../datos/estaciones.txt', sep=';')
-for index, row in df.loc[0:1,:].iterrows():
+for index, row in df.loc[0:1, :].iterrows():
     estacion = row['nom_est']
     cultivo = row['cultivo']
     exc_archivo = row['archivo_in']
     print(estacion, cultivo)
     a = class_operativa(estacion, fecha, correccion, 'GG')
+    for i in range(0, 16, 4):
+        a.radsup[0, i:i + 4] = a.radsup[0, i]
+        a.etp[0, i:i + 4] = a.etp[0, i]
     bh = class_bhora(a, cultivo, tipo_bh, ini_camp)
     bh.calc_min_hist()
     # FIGURA del Balance sin Correccion #######

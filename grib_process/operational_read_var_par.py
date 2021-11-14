@@ -180,8 +180,6 @@ def calc_hr(init_date, psf, q2f, t2f):
     HR = pd.Series(index=n_idx, data=hrs.array, dtype='float32')
 
     return HR
-
-
 # --------------------------------------------
 start_time = time.time()
 # ############################################
@@ -201,136 +199,140 @@ elif var == 'hrmax':
 #
 # Lat-Lon Resistencia: -27.45/-59.05 (SMN)
 # Lat-Lon Junin: -34.55/-60.92 (SMN)
-lat_e = [-34.55]
-lon_e = [-60.92]
-n_est = ['junin']
 
-# Diccionario con datos generales
-dic = {'dfolder':folder, 'var':var,
-       'lat_e':lat_e[0], 'lon_e':lon_e[0],
-       'n_est':n_est[0]}
+lat_e = [-34.55, -27.45, -31.3, -33.11667, -35966667, -33.666667]
+lon_e = [-60.92,  -59.05, -58.016667, -64.233333, -62.73333, -61.966667]
+n_est = ['junin', 'resistencia', 'concordia', 'rio_cuarto', 'trenque_launquen', 'venado_tuerto']
 
-# -------------------------------------------------------
-# MAIN CODE
-# -------------------------------------------------------
-tz_str = 'America/Argentina/Buenos_Aires'
-arg_tz = timezone('America/Argentina/Buenos_Aires')
-fecha = dt.datetime.strptime(f_str, '%Y-%m-%d')  # Test inicio de periodo por deficit.
-if fecha >= dt.datetime(2021, 2, 24):
-    fecha -= dt.timedelta(days=1)
+for ii in range(len(n_est)):
+    # lat_e = [-34.55]
+    # lon_e = [-60.92]
+    # n_est = ['junin']
+    # Diccionario con datos generales
+    dic = {'dfolder':folder, 'var':var, 'lat_e':lat_e[ii], 'lon_e':lon_e[ii],
+       'n_est':n_est[ii]}
 
-print(' --- Generando pronosticos para el: ' + fecha.strftime('%d-%m-%Y') + ' --- ')
-i_fecha = fecha
-f_fecha = (fecha + dt.timedelta(days=29))
-dic['idate'] = i_fecha
-dic['fdate'] = f_fecha
+    # -------------------------------------------------------
+    # MAIN CODE
+    # -------------------------------------------------------
+    tz_str = 'America/Argentina/Buenos_Aires'
+    arg_tz = timezone('America/Argentina/Buenos_Aires')
+    fecha = dt.datetime.strptime(f_str, '%Y-%m-%d')  # Test inicio de periodo por deficit.
+    if fecha >= dt.datetime(2021, 2, 24):
+        fecha -= dt.timedelta(days=1)
 
-# Obtenemos los archivos para calcular el ensamble
-archi = get_ens_file(var, i_fecha)
+    print(' --- Generando pronosticos para el: ' + fecha.strftime('%d-%m-%Y') + ' --- ')
+    i_fecha = fecha
+    f_fecha = (fecha + dt.timedelta(days=29))
+    dic['idate'] = i_fecha
+    dic['fdate'] = f_fecha
 
-# Abrimos una carpeta y guardamos los archivos ahi
-cpta_salida = '../datos/datos_op/' + n_est[0] + '/' + fecha.strftime('%Y%m%d') + '/'
-os.makedirs(cpta_salida, exist_ok=True)
-dic['ofolder'] = cpta_salida
-# print(dic)
+    # Obtenemos los archivos para calcular el ensamble
+    archi = get_ens_file(var, i_fecha)
 
-def process_hr(ens, archi=archi, dic=dic, i_fecha=i_fecha, f_fecha=f_fecha):
-    print('Calulando HR con archivos')
-    f_ps = archi['pressfc'][ens]
-    f_q2 = archi['q2m'][ens]
-    f_t2 = archi['tmp2m'][ens]
-    if 'vacio' in [f_ps, f_q2, f_t2]:
-        print( 'No se genera pronostico para HR con: ')
-        print('Presion sup: ', f_ps)
-        print('Hum Esp 2m: ', f_q2)
-        print('Tmp 2m: ', f_t2)
-    else:
-        # print(f_ps, f_q2, f_t2)
-        in_t = get_initial_date(f_ps)
-        d_ps = get_data_from_grib(f_ps, dic['lat_e'], dic['lon_e'], dic['fdate'])
-        d_q2 = get_data_from_grib(f_q2, dic['lat_e'], dic['lon_e'], dic['fdate'])
-        d_t2 = get_data_from_grib(f_t2, dic['lat_e'], dic['lon_e'], dic['fdate'])
-        d_hr = calc_hr(in_t, d_ps, d_q2, d_t2)
-        if operacion == 'mean':
-            fvar = 'hrmean'
-            resu = d_hr.resample(rule='1D').mean()
-        elif operacion == 'max':
-            fvar = 'hrmax'
-            resu = d_hr.resample(rule='1D').max()
-        elif operacion == 'min':
-            fvar = 'hrmin'
-            resu = d_hr.resample(rule='1D').min()
+    # Abrimos una carpeta y guardamos los archivos ahi
+    cpta_salida = '../datos/datos_op/' + dic['n_est'] + '/' + fecha.strftime('%Y%m%d') + '/'
+    os.makedirs(cpta_salida, exist_ok=True)
+    dic['ofolder'] = cpta_salida
+    # print(dic)
+    def process_hr(ens, archi=archi, dic=dic, i_fecha=i_fecha, f_fecha=f_fecha):
+            print('Calulando HR con archivos')
+            f_ps = archi['pressfc'][ens]
+            f_q2 = archi['q2m'][ens]
+            f_t2 = archi['tmp2m'][ens]
+            if 'vacio' in [f_ps, f_q2, f_t2]:
+                print( 'No se genera pronostico para HR con: ')
+                print('Presion sup: ', f_ps)
+                print('Hum Esp 2m: ', f_q2)
+                print('Tmp 2m: ', f_t2)
+            else:
+                # print(f_ps, f_q2, f_t2)
+                in_t = get_initial_date(f_ps)
+                d_ps = get_data_from_grib(f_ps, dic['lat_e'], dic['lon_e'], dic['fdate'])
+                d_q2 = get_data_from_grib(f_q2, dic['lat_e'], dic['lon_e'], dic['fdate'])
+                d_t2 = get_data_from_grib(f_t2, dic['lat_e'], dic['lon_e'], dic['fdate'])
+                d_hr = calc_hr(in_t, d_ps, d_q2, d_t2)
+                if operacion == 'mean':
+                    fvar = 'hrmean'
+                    resu = d_hr.resample(rule='1D').mean()
+                elif operacion == 'max':
+                    fvar = 'hrmax'
+                    resu = d_hr.resample(rule='1D').max()
+                elif operacion == 'min':
+                    fvar = 'hrmin'
+                    resu = d_hr.resample(rule='1D').min()
+                else:
+                    fvar = 'hrmean'
+                    resu = d_hr.resample(rule='1D').mean()
+                sel_d = np.logical_and(resu.index >= arg_tz.localize(i_fecha),\
+                                       resu.index <= arg_tz.localize(f_fecha))
+                resultado = resu.loc[sel_d]
+            # Guardamos el archivo en la carpeta de salida
+                in_t = dt.datetime.utcfromtimestamp(in_t.item()/10**9).strftime('%Y%m%d%H')
+                archivo_salida = cpta_salida + fvar + '_' + str(ens).zfill(2) +\
+                                 '_' + in_t + '.txt'
+                resultado.to_csv(archivo_salida, sep=';', float_format='%.2f', decimal=',',\
+                                 date_format='%Y-%m-%d',index_label='fecha', header=[fvar])
+    def process_var(ens, archi=archi, var=var, dic=dic, i_fecha=i_fecha, f_fecha=f_fecha):
+        arch = archi[ens]
+        if arch == 'vacio':
+            pass
         else:
-            fvar = 'hrmean'
-            resu = d_hr.resample(rule='1D').mean()
-        sel_d = np.logical_and(resu.index >= arg_tz.localize(i_fecha),\
-                               resu.index <= arg_tz.localize(f_fecha))
-        resultado = resu.loc[sel_d]
-    # Guardamos el archivo en la carpeta de salida
-        in_t = dt.datetime.utcfromtimestamp(in_t.item()/10**9).strftime('%Y%m%d%H')
-        archivo_salida = cpta_salida + fvar + '_' + str(ens).zfill(2) +\
-                         '_' + in_t + '.txt'
-        resultado.to_csv(archivo_salida, sep=';', float_format='%.2f', decimal=',',\
-                         date_format='%Y-%m-%d',index_label='fecha', header=[fvar])
-def process_var(ens, archi=archi, var=var, dic=dic, i_fecha=i_fecha, f_fecha=f_fecha):
-    arch = archi[ens]
-    if arch == 'vacio':
-        pass
-    else:
-        grbs = xr.open_dataset(arch, engine='cfgrib')#, chunks={'lon_0':20, 'lat_0':20})
-        nvar = list(grbs.data_vars.keys())[0]
-        xe   = np.array(dic['lon_e']) % 360
-        ye   = dic['lat_e']
-        tiempos = grbs.valid_time.values <= np.datetime64(dic['fdate'] + dt.timedelta(days=5))
-        data = grbs[nvar].sel(longitude=xe, latitude=ye, step=tiempos, method='nearest')
-        in_t = data.time.values
-        aux_d = data.to_pandas()
-        new_index = (in_t + aux_d.index).tz_localize('UTC')  # Horas UTC
-        new_index = new_index.tz_convert(tz_str)
-        datos = pd.Series(index=new_index, data=aux_d.array, dtype='float32')
-        if var == 'wnd10m':
-            fvar = 'velviento'
-            nvar1 = list(grbs.data_vars.keys())[1]
-            data1 = grbs[nvar1].sel(longitude=xe, latitude=ye, step=tiempos, method='nearest')
-            aux_d1 = data1.to_pandas()
-            datos1 = pd.Series(index=new_index, data=aux_d1.array, dtype='float32')
-            spd = (datos1**2 + datos**2).apply(np.sqrt)
-            resu = spd.resample('1D').mean()
-        elif var == 'prate':
-            fvar = 'precip'
-            resu = datos.resample(rule='24H', closed='left', base=9).apply(calc_precip)
-            resu.index = resu.index.map(lambda t: t.replace(hour=0))
-        elif var == 'dswsfc':
-            fvar = 'radsup'
-            resu = datos.resample(rule='1D').apply(calc_radsup)
-        elif var == 'tmax':
-            fvar = var
-            resu = datos.resample(rule='1D').max()
-        elif var == 'tmin':
-            fvar = var
-            resu = datos.resample(rule='1D').min()
-        grbs.close()
-    # Seleccionamos datos de pronostico para prox 30 dias
-        sel_d = np.logical_and(resu.index >= arg_tz.localize(i_fecha),\
-                               resu.index <= arg_tz.localize(f_fecha))
-        resultado = resu.loc[sel_d]
-        in_t = dt.datetime.utcfromtimestamp(in_t.item()/10**9).strftime('%Y%m%d%H')
-        archivo_salida = cpta_salida + fvar + '_' + str(ens).zfill(2) + '_' + in_t + '.txt'
-        resultado.to_csv(archivo_salida, sep=';', float_format='%.2f', decimal=',',\
-                         date_format='%Y-%m-%d',index_label='fecha', header=[fvar])
+            grbs = xr.open_dataset(arch, engine='cfgrib')#, chunks={'lon_0':20, 'lat_0':20})
+            nvar = list(grbs.data_vars.keys())[0]
+            xe   = np.array(dic['lon_e']) % 360
+            ye   = dic['lat_e']
+            tiempos = grbs.valid_time.values <= np.datetime64(dic['fdate'] + dt.timedelta(days=5))
+            data = grbs[nvar].sel(longitude=xe, latitude=ye, step=tiempos, method='nearest')
+            in_t = data.time.values
+            aux_d = data.to_pandas()
+            new_index = (in_t + aux_d.index).tz_localize('UTC')  # Horas UTC
+            new_index = new_index.tz_convert(tz_str)
+            datos = pd.Series(index=new_index, data=aux_d.array, dtype='float32')
+            if var == 'wnd10m':
+                fvar = 'velviento'
+                nvar1 = list(grbs.data_vars.keys())[1]
+                data1 = grbs[nvar1].sel(longitude=xe, latitude=ye, step=tiempos, method='nearest')
+                aux_d1 = data1.to_pandas()
+                datos1 = pd.Series(index=new_index, data=aux_d1.array, dtype='float32')
+                spd = (datos1**2 + datos**2).apply(np.sqrt)
+                resu = spd.resample('1D').mean()
+            elif var == 'prate':
+                fvar = 'precip'
+                resu = datos.resample(rule='24H', closed='left', base=9).apply(calc_precip)
+                resu.index = resu.index.map(lambda t: t.replace(hour=0))
+            elif var == 'dswsfc':
+                fvar = 'radsup'
+                resu = datos.resample(rule='1D').apply(calc_radsup)
+            elif var == 'tmax':
+                fvar = var
+                resu = datos.resample(rule='1D').max()
+            elif var == 'tmin':
+                fvar = var
+                resu = datos.resample(rule='1D').min()
+            grbs.close()
+        # Seleccionamos datos de pronostico para prox 30 dias
+            sel_d = np.logical_and(resu.index >= arg_tz.localize(i_fecha),\
+                                   resu.index <= arg_tz.localize(f_fecha))
+            resultado = resu.loc[sel_d]
+            in_t = dt.datetime.utcfromtimestamp(in_t.item()/10**9).strftime('%Y%m%d%H')
+            archivo_salida = cpta_salida + fvar + '_' + str(ens).zfill(2) + '_' + in_t + '.txt'
+            resultado.to_csv(archivo_salida, sep=';', float_format='%.2f', decimal=',',\
+                             date_format='%Y-%m-%d',index_label='fecha', header=[fvar])
 
-# Comenzamos el calculo en cada variable
-if var == 'hr':
-    ipar = range(0, 16)
-    p = Pool(CORES)
-    p.clear()
-    p.map(process_hr, ipar)
-    p.close()
-else:
-    ipar = range(0, 16)
-    p = Pool(CORES)
-    p.clear()
-    p.map(process_var, ipar)
-    p.close()
+
+        # Comenzamos el calculo en cada variable
+    if var == 'hr':
+        ipar = range(0, 16)
+        p = Pool(CORES)
+        p.clear()
+        p.map(process_hr, ipar)
+        p.close()
+    else:
+        ipar = range(0, 16)
+        p = Pool(CORES)
+        p.clear()
+        p.map(process_var, ipar)
+        p.close()
 
 print("--- %s seconds ---" % (time.time() - start_time))
