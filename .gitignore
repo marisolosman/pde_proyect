@@ -78,7 +78,7 @@ target/
 run_test_bash.sh
 
 # data files
-datos/
+**/datos_op/
 #ignore .out files
 *.out
 #ignore netcdf
