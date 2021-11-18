@@ -200,9 +200,9 @@ elif var == 'hrmax':
 # Lat-Lon Resistencia: -27.45/-59.05 (SMN)
 # Lat-Lon Junin: -34.55/-60.92 (SMN)
 
-lat_e = [-34.55, -27.45, -31.3, -33.11667, -35966667, -33.666667]
+lat_e = [-34.55, -27.45, -31.3, -33.11667, -35.966667, -33.666667]
 lon_e = [-60.92,  -59.05, -58.016667, -64.233333, -62.73333, -61.966667]
-n_est = ['junin', 'resistencia', 'concordia', 'rio_cuarto', 'trenque_launquen', 'venado_tuerto']
+n_est = ['junin', 'resistencia', 'concordia', 'rio_cuarto', 'trenque_lauquen', 'venado_tuerto']
 
 for ii in range(len(n_est)):
     # lat_e = [-34.55]
@@ -231,7 +231,7 @@ for ii in range(len(n_est)):
     archi = get_ens_file(var, i_fecha)
 
     # Abrimos una carpeta y guardamos los archivos ahi
-    cpta_salida = '../datos/datos_op/' + dic['n_est'] + '/' + fecha.strftime('%Y%m%d') + '/'
+    cpta_salida = '/home/osman/proyectos/pde_proyect/datos/datos_op/' + dic['n_est'] + '/' + fecha.strftime('%Y%m%d') + '/'
     os.makedirs(cpta_salida, exist_ok=True)
     dic['ofolder'] = cpta_salida
     # print(dic)

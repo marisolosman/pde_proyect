@@ -29,6 +29,7 @@ class class_bhora:
         self.clt = clt
         self.t_bh = t_bh
         self.yr_c = yr_c
+        self.c1 = '/datos/osman/datos_pde_project/' # carpeta con datos actualizados
         # Calculamos los datos necesarios para correr BH-ORA
         self.get_times()
         self.get_id()
@@ -45,7 +46,7 @@ class class_bhora:
             self.correct_bhora()
 
     def get_times(self):
-        t_ini = self.opera.dtimes[0] - dt.timedelta(days=1)
+        t_ini = self.opera.dtimes[0] # - dt.timedelta(days=1)
         self.dtimes = np.insert(self.opera.dtimes, 0, t_ini)
 
     def get_id(self):
@@ -78,7 +79,7 @@ class class_bhora:
         self.kc = kc_local
 
     def gen_init_cond(self):
-        c1 = '../datos/bhora_init/'
+        c1 = self.c1
         # Cultivos BH
         df = pd.read_csv('../datos/estaciones.txt', sep=';')
         infile = df.loc[df['nom_est'] == self.opera.estacion,'archivo_in'].values[0]
@@ -174,7 +175,7 @@ class class_bhora:
         self.fecha_fin_excesos = dt.datetime(self.yr_c+1, mes_fd, dia_fd) + dt.timedelta(days=df)
 
     def calc_min_hist(self):
-        c1 = '../datos/bhora_init/'
+        c1 = self.c1
         df = pd.read_csv('../datos/estaciones.txt', sep=';')
         infile = df.loc[df['nom_est'] == self.opera.estacion,'archivo_in'].values[0]
         df = pd.read_excel(c1 + infile, sheet_name='DatosDiarios')

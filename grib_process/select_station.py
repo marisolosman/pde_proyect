@@ -38,9 +38,9 @@ lon_e = sys.argv[3]
 
 # Lat-Lon Resistencia: -27.45/-59.05 (SMN)
 # Lat-Lon Junin: -34.55/-60.92 (SMN)
-lat_e = [-34.55, -27.45, -31.3, -33.11667, -35966667, -33.666667]
+lat_e = [-34.55, -27.45, -31.3, -33.11667, -35.966667, -33.666667]
 lon_e = [-60.92,  -59.05, -58.016667, -64.233333, -62.73333, -61.966667]
-n_est = ['junin', 'resistencia', 'concordia', 'rio_cuarto', 'trenque_launquen', 'venado_tuerto']
+n_est = ['junin', 'resistencia', 'concordia', 'rio_cuarto', 'trenque_lauquen', 'venado_tuerto']
 
 folder = '/datos/osman/datos_pde_project/'
 # Abrimos una carpeta y guardamos los archivos ahi

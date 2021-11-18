@@ -78,11 +78,10 @@ target/
 run_test_bash.sh
 
 # data files
-
-datos/*
-./data_final_*.txt
+datos/
 #ignore .out files
 *.out
 #ignore netcdf
 *.nc
 *.zip
+*.txt

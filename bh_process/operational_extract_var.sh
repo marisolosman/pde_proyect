@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 fecha=$(date '+%Y-%m-%d')
 for var in 'tmax' 'tmin' 'dswsfc' 'wnd10m' 'prate' 'hrmean'; do 
