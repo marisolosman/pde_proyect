@@ -70,6 +70,7 @@ for nomvar, unid in zip(variables, unidades) :
     f.createDimension('time', None)
     df = pd.read_csv('../datos/estaciones.txt', sep=';')
     for row in df.itertuples():
+        print(row.nom_est)
         dfm = read_data_hist_mdb(nomvar, row.tipo_est, row.id_est)
         # Datos para todas las fechas entre 01/01/1999 - 31/12/2010
         df0 = completar_faltante(dfm, nomvar)
