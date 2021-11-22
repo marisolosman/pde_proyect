@@ -41,8 +41,8 @@ def select_data_period(estacion, nomvar, fecha, leadtime, year_test='None'):
     if year_test == 'None':
         m_hist = np.array([a.month for a in df.dtimes])
         ind_data = np.isin(m_hist, np.array(cnd))
-        mask_o = np.logical_or(df.mask_obs[nomvar], ind_data)
-        mask_m = np.logical_or(df.mask_mod[nomvar], ind_data)
+        mask_o = np.logical_and(df.mask_obs[nomvar], ind_data)
+        mask_m = np.logical_and(df.mask_mod[nomvar], ind_data)
         do = df.datos_obs[nomvar][mask_o]
         dm = df.datos_mod[nomvar][mask_m]
     else:
@@ -53,8 +53,8 @@ def select_data_period(estacion, nomvar, fecha, leadtime, year_test='None'):
         ind_data = np.isin(m_hist, np.array(cnd))
         exc_data = np.logical_and(ind_data, np.logical_not(id_fm))
         # extract data to generate the distribution of historical data.
-        mask_o = np.logical_or(df.mask_obs[nomvar], exc_data)
-        mask_m = np.logical_or(df.mask_mod[nomvar], exc_data)
+        mask_o = np.logical_and(df.mask_obs[nomvar], exc_data)
+        mask_m = np.logical_and(df.mask_mod[nomvar], exc_data)
         do = df.datos_obs[nomvar][mask_o]
         dm = df.datos_mod[nomvar][mask_m]
 

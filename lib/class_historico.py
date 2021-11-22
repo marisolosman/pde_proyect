@@ -55,22 +55,21 @@ class class_historico:
             nomvar = os.path.basename(archivo).split('_')[0]
             nc = Dataset(archivo, 'r')
             fill_value = nc.variables[self.estacion]._FillValue
-            datos[nomvar] = nc.variables[self.estacion][:]
-            mask[nomvar] = np.array(datos[nomvar] == fill_value)
+            datos[nomvar] = np.ma.getdata(nc.variables[self.estacion][:])
+            mask[nomvar] = np.array(datos[nomvar] != fill_value)
             nc.close()
 
         self.datos_obs = datos
         self.mask_obs = mask
         nc = Dataset(self.archivos_obs[0], 'r')
         self.id_ora = nc.variables[self.estacion].id_ora
-        self.lat = nc.variables[self.estacion].lat
-        self.lon = nc.variables[self.estacion].lon
         nc.close()
 
     def get_data_mod(self):
         datos = {}
         mask = {}
         for archivo in self.archivos_mod:
+            archivo
             nomvar = os.path.basename(archivo).split('_')[2].split('.')[0]
             df = pd.read_csv(archivo, sep=';', decimal=',',
                              header=0).drop(['Unnamed: 0'],axis=1)
@@ -88,7 +87,7 @@ class class_historico:
                 datos[nomvar] = col.mean(axis=1).to_numpy()
                 if nomvar == 'tmax' or nomvar == 'tmin':
                     datos[nomvar] = datos[nomvar] - 273.
-            mask[nomvar] = np.isnan(datos[nomvar])
+            mask[nomvar] = np.logical_not(np.isnan(datos[nomvar]))
         self.datos_mod = datos
         self.mask_mod = mask
 
