@@ -118,7 +118,7 @@ def qq_correction(data, nomvar, dtimes, estacion):
         p1[p1 > cdf_limite] = cdf_limite
         corr_o = np.nanquantile(obs_datos, p1.flatten(), interpolation='linear')
         data_corr[idx, :] = np.reshape(corr_o, p1.shape)
-
+    
     return data_corr
 
 
@@ -164,5 +164,5 @@ def qq_correction_pp(data, dtimes, estacion, tipo_ajuste='GG'):
             corr_factor = xo_mean/xm_mean
             corr[idc] = corr[idc]*corr_factor
             data_corr[idx, :] = corr
-
+    
     return data_corr
