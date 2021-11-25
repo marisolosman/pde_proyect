@@ -5,3 +5,6 @@ concordia;105;SMN;S1-V;balance_CONC_YERUA_S1-V_PARA_montecarlo.xls
 rio_cuarto;39;SMN;S1-V;balance_RCTO_FL100-35_S1-V_VMAR_montecarlo.xls
 trenque_lauquen;54;SMN;S1-IV;balance_TLAU_FA100-35_S1-IV_TLAU_montecarlo.xls
 venado_tuerto;119;SMN;S1-V;balance_VTUER_ROJAS_S1-V_PERG_montecarlo.xls
+ceres;23;SMN;S1-V;balance_CER_CERES_S1-V_RAFA_montecarlo.xls
+parana;32;SMN;S1-V;balance_PARA_LOS CAPONES_S1-V_PARA_montecarlo.xls
+vmrs;24;SMN;S1-V;balance_VMRS_FL100-50_S1-V_VMAR_montecarlo.xls

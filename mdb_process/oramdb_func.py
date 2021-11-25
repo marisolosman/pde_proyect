@@ -252,6 +252,18 @@ def read_data_hist_mdb(var, tipo, idestacion):
     elif var == 'radsup':
         SQL_q, SQL_extra = get_hist_sql_string(var, tipo, idestacion)
         df0 = pd.read_sql_query(SQL_q, cnxn)
+        if df0.dropna().empty:
+            SQL_q1 = '''
+                SELECT Fecha, valor  FROM DatoInterpolado
+                WHERE Estacion = {}
+                AND nombreCampo = 7
+                AND (((DatoInterpolado.Fecha)>=#1/1/1999#))
+                AND (((DatoInterpolado.Fecha)<=#12/31/2010#))
+                ORDER BY Fecha
+                '''.format(idestacion)
+            df0 = pd.read_sql_query(SQL_q1, cnxn)
+            df0.rename(columns={'Fecha': 'Fecha', 'valor': 'Heliofania'}, inplace=True)
+
         SQL_E = '''
                 SELECT Latitud, Longitud From Estacion
                 WHERE IdEstacion = {}
