@@ -92,10 +92,7 @@ def PlotForecast(row):
     plt.close(fig)
 
 pool = mp.Pool(CORES)
-rows = [row for index, row in df.loc[0:6].iterrows()]
+rows = [row for index, row in df.loc[0: 9].iterrows()]
 results = [pool.map(PlotForecast, rows)]
-
-# Step 3: Don't forget to close
 pool.close()
-#result = for index, row in df.loc[4:6, :].iterrows():
 

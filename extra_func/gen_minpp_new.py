@@ -42,7 +42,8 @@ def calc_freq_pp(datos, ppmin):
     return frec
 
 
-estaciones = ['concordia','junin', 'resistencia', 'rio_cuarto', 'trenque_lauquen', 'venado_tuerto']
+estaciones = ['concordia','junin', 'resistencia', 'rio_cuarto', 'trenque_lauquen',
+              'venado_tuerto', 'parana', 'ceres', 'vmrs']
 meses = np.arange(1, 13)
 resumen = pd.DataFrame(index=meses, columns=estaciones)
 for idx in range(31):

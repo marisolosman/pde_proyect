@@ -32,17 +32,20 @@ start_time = time.time()
 file_name = ['velviento', 'tmin', 'tmax', 'hrmean', 'radsup', 'precip']
 var_name = ['velviento', 'tmin', 'tmax', 'hrmean', 'dswrf', 'prate']
 
-nest    = sys.argv[1]  # Segundo argumento variable
-lat_e  = sys.argv[2]
-lon_e = sys.argv[3]
+#n_est    = sys.argv[1]  # Segundo argumento variable
+#lat_e  = [np.float(sys.argv[2])]
+#lon_e = [np.float(sys.argv[3])]
 
 # Lat-Lon Resistencia: -27.45/-59.05 (SMN)
 # Lat-Lon Junin: -34.55/-60.92 (SMN)
-lat_e = [-34.55, -27.45, -31.3, -33.11667, -35.966667, -33.666667]
-lon_e = [-60.92,  -59.05, -58.016667, -64.233333, -62.73333, -61.966667]
-n_est = ['junin', 'resistencia', 'concordia', 'rio_cuarto', 'trenque_lauquen', 'venado_tuerto']
-
+lat_e = [-34.55, -27.45, -31.3, -33.11667, -35.966667, -33.666667,
+         -31.783333, -29.9, -29.8833]
+lon_e = [-60.92,  -59.05, -58.016667, -64.233333, -62.73333, -61.966667,
+         -60.483333, -63.683333, -61.95]
+n_est = ['junin', 'resistencia', 'concordia', 'rio_cuarto',
+         'trenque_lauquen', 'venado_tuerto', 'parana', 'vmrs', 'ceres']
 folder = '/datos/osman/datos_pde_project/'
+
 # Abrimos una carpeta y guardamos los archivos ahi
 for ii in range(len(n_est)):
     # Diccionario con datos generales
