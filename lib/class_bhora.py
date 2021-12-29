@@ -61,8 +61,11 @@ class class_bhora:
         self.data_estacion = {'nombre':n1, 'prov':p1, 'tipoe':t1}
 
     def get_cultivo_data(self):
+        df = pd.read_csv('../datos/estaciones.txt', sep=';')
+        nombre_cultivo = df.loc[df['nom_est'] == self.opera.estacion,'nombre_cultivo'].values[0]
         ds = read_soil_parameter(self.id_ora, self.clt, self.t_bh)
         self.clt_data = ds
+        self.nombre_cultivo = nombre_cultivo
 
     def get_kc_cultivo(self):
         import calendar
@@ -131,9 +134,11 @@ class class_bhora:
         mesi = df3.loc[cnd_i, 'Mes'].values[0]
         diai = df3.loc[cnd_i, u'Día'].values[0]
         self.fecha_inicio_plot = dt.datetime(self.yr_c, mesi, diai)
+        self.fecha_media_siembra = dt.datetime(self.yr_c, mesi, diai)
         mesf = df3.loc[cnd_f, 'Mes'].values[0]
         diaf = df3.loc[cnd_f, u'Día'].values[0]
         self.fecha_fin_plot = dt.datetime(self.yr_c+1, mesf, diaf) + relativedelta(months=1)
+        self.fecha_media_cosecha = dt.datetime(self.yr_c+1, mesf, diaf)
         # Periodo Critico Deficit
         # Inicio
         cnd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt)
@@ -197,7 +202,7 @@ class class_bhora:
             al_min = alm1
 
         return al_min, feh
-        
+
     def calc_bhora(self):
         #print('######## ')
         Nt = len(self.ALM)

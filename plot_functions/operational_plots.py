@@ -22,12 +22,15 @@ def campaign_plot(bh):
     estacion = bh.data_estacion['nombre']
     provincia = bh.data_estacion['prov']
     tipo_est = bh.data_estacion['tipoe']
+    nombre_cultivo = bh.nombre_cultivo
     ini = bh.fecha_inicio_plot
     fin = bh.fecha_fin_plot
     ini_e = bh.fecha_inicio_excesos
     fin_e = bh.fecha_fin_excesos
     ini_d = bh.fecha_inicio_deficit
     fin_d = bh.fecha_fin_deficit
+    fms = bh.fecha_media_siembra.strftime('%d/%m')
+    fmc = bh.fecha_media_cosecha.strftime('%d/%m')
     CC = bh.clt_data['CC']
     PMP = bh.clt_data['PMP']
     alm_min, fecha_min = bh.calc_min_hist()
@@ -51,12 +54,12 @@ def campaign_plot(bh):
     color_e = [0.,204./255.,1., 0.6]
     color_d = [255./255.,204./255.,0, 0.6]
     ax.fill_between(xe, ye, facecolor=color_e, alpha=0.3, hatch='/',
-                    label=u'Período crítico exceso hídrico', color=color_e, zorder=0)
+                    label=u'Período vulnerable a exceso hídrico', color=color_e, zorder=0)
     ax.fill_between(xd, ye, facecolor=color_d, alpha=0.3, hatch='/',
-                    label=u'Período crítico déficit hídrico', color=color_d, zorder=0)
+                    label=u'Período vulnerable a déficit hídrico', color=color_d, zorder=0)
     # observado
-    ax.plot(bh.fecha_obs, bh.almr_obs,'k',linewidth=2, zorder=1, label='Almacenaje estimado')
-    ax.plot(fecha_min,alm_min, '--', linewidth=1.5, zorder=1, label='Mínimo histórico')
+    ax.plot(bh.fecha_obs, bh.almr_obs,'k',linewidth=2, zorder=1, label='Almacenaje calculado')
+    ax.plot(fecha_min,alm_min, '--', linewidth=1.5, zorder=1, label='Mínimo histórico de almacenaje')
     # Eje Y
     ax.set_ylim(0, CC*1.2)
     ax.set_ylabel(u'Milímetros', fontsize=10, **csfont)
@@ -81,9 +84,13 @@ def campaign_plot(bh):
     # Texto del Eje
     titulo = 'Perspectiva de la reserva de agua en el suelo'
     subtitulo = 'Estación: ' + estacion + ', ' + provincia +\
-                ' (' + tipo_est + ')' +  '\nInicio Pron: ' + fecha.strftime('%Y-%m-%d')
-    fig.text(0.1, 0.95, titulo, fontsize=14, fontweight='bold', fontname='Arial')
-    fig.text(0.1, 0.85, subtitulo, fontsize=14, fontname='Arial')
+                ' (' + tipo_est + ')' + '\nCultivo: ' + nombre_cultivo +\
+                '\nInicio Pron: ' + fecha.strftime('%d/%m/%Y') +\
+                '\n' +\
+                '\nFecha Media de siembra: ' + fms +\
+                '\nFecha Media de siembra: ' + fmc
+    fig.text(0.1, 0.95, titulo, fontsize=14, fontweight='bold')
+    fig.text(0.1, 0.93, subtitulo, fontsize=13, va='top')
 
 
     return fig, ax
