@@ -10,6 +10,8 @@ from matplotlib.dates import DateFormatter
 from matplotlib.dates import MO, TU, WE, TH, FR, SA, SU
 from matplotlib.ticker import MultipleLocator
 
+from PIL import Image
+
 mpl.rcParams['font.family'] = 'Arial'
 mpl.rcParams['xtick.labelsize'] = 12
 mpl.rcParams['ytick.labelsize'] = 12
@@ -35,6 +37,10 @@ def campaign_plot(bh):
     PMP = bh.clt_data['PMP']
     alm_min, fecha_min = bh.calc_min_hist()
 
+    ## Logos ####
+    cima = Image.open('../plot_functions/logos/logo_cima.jpg')
+    ora = Image.open('../plot_functions/logos/logo_ora.png')
+    prov = Image.open('../plot_functions/logos/logo_provul.JPG')
     #################################################################
     # COMENZAMOS LA FIGURA ##########
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
@@ -92,5 +98,17 @@ def campaign_plot(bh):
     fig.text(0.1, 0.95, titulo, fontsize=14, fontweight='bold')
     fig.text(0.1, 0.93, subtitulo, fontsize=13, va='top')
 
+    # Logo CIMA
+    newax = fig.add_axes([0.08, 0.11, 0.13, 0.13], anchor='NE', zorder=0)
+    newax.imshow(cima, alpha=0.85)
+    newax.axis('off')
+    # Logo ORA
+    newax = fig.add_axes([0.22, 0.10, 0.13, 0.13], anchor='NE', zorder=0)
+    newax.imshow(ora, alpha=0.85)
+    newax.axis('off')
+    # Logo Provul
+    newax = fig.add_axes([0.36, 0.057, 0.13, 0.13], anchor='NE', zorder=0)
+    newax.imshow(prov, alpha=0.85)
+    newax.axis('off')
 
     return fig, ax
