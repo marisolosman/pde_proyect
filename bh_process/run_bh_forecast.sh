@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 fecha=$(date -d "$date -1 day" '+%Y%m%d')
 yy=$(date '+%Y')
 month=$(date '+%m')
 if [ "$month" -le 5 ] ; then
-	((y=yy+1i))
+	((yy=yy-1))
 fi
 cd /home/osman/proyectos/pde_proyect/bh_process/
 /datos/osman/anaconda3/envs/pysol/bin/python /home/osman/proyectos/pde_proyect/bh_process/bh_operational_felix.py $yy $fecha --correccion --method 'EG'

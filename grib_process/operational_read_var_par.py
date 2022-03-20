@@ -205,6 +205,18 @@ lon_e = [-60.92,  -59.05, -58.016667, -64.233333, -62.73333, -61.966667,
          -60.483333, -63.683333, -61.95]
 n_est = ['junin', 'resistencia', 'concordia', 'rio_cuarto', 'trenque_lauquen',
          'venado_tuerto','parana', 'vmrs', 'ceres']
+# -------------------------------------------------------
+# MAIN CODE
+# -------------------------------------------------------
+tz_str = 'America/Argentina/Buenos_Aires'
+arg_tz = timezone('America/Argentina/Buenos_Aires')
+fecha = dt.datetime.strptime(f_str, '%Y-%m-%d')
+print(fecha)
+if fecha >= dt.datetime(2021, 2, 24):
+    fecha = fecha - dt.timedelta(days=1)
+    print(fecha)
+
+print(' --- Generando pronosticos para el: ' + fecha.strftime('%d-%m-%Y') + ' --- ')
 
 for ii in range(len(n_est)):
     # lat_e = [-34.55]
@@ -214,16 +226,6 @@ for ii in range(len(n_est)):
     dic = {'dfolder':folder, 'var':var, 'lat_e':lat_e[ii], 'lon_e':lon_e[ii],
        'n_est':n_est[ii]}
 
-    # -------------------------------------------------------
-    # MAIN CODE
-    # -------------------------------------------------------
-    tz_str = 'America/Argentina/Buenos_Aires'
-    arg_tz = timezone('America/Argentina/Buenos_Aires')
-    fecha = dt.datetime.strptime(f_str, '%Y-%m-%d')  # Test inicio de periodo por deficit.
-    if fecha >= dt.datetime(2021, 2, 24):
-        fecha -= dt.timedelta(days=1)
-
-    print(' --- Generando pronosticos para el: ' + fecha.strftime('%d-%m-%Y') + ' --- ')
     i_fecha = fecha
     f_fecha = (fecha + dt.timedelta(days=29))
     dic['idate'] = i_fecha
