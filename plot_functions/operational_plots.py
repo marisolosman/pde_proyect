@@ -44,8 +44,8 @@ def campaign_plot(bh):
     #################################################################
     # COMENZAMOS LA FIGURA ##########
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 6))
-    ax.axhline(CC, color='blue')  # Capacidad de campo
-    ax.axhline(PMP, color='brown')  # Punto Marchitez Permanente
+    ax.axhline(CC, color='blue', label='Capacidad de campo')  # Capacidad de campo
+    ax.axhline(PMP, color='brown', label='Punto de marchitez')  # Punto Marchitez Permanente
     # minimo historico: linea punteada gris
     #ax[0].plot(clim_times, min_historico.values, color='black', linestyle=(0, (5, 10)),
     #           alpha=0.3)
@@ -90,13 +90,15 @@ def campaign_plot(bh):
     # Texto del Eje
     titulo = 'Perspectiva de la reserva de agua en el suelo'
     subtitulo = 'Estación: ' + estacion + ', ' + provincia +\
-                ' (' + tipo_est + ')' + '\nCultivo: ' + nombre_cultivo +\
-                '\nInicio Pron: ' + fecha.strftime('%d/%m/%Y') +\
-                '\n' +\
-                '\nFecha Media de siembra: ' + fms +\
-                '\nFecha Media de siembra: ' + fmc
+                ' (' + tipo_est + ')' + '\nCultivo: ' + nombre_cultivo
+    subtitulo2 = '\nInicio Pronóstico: ' + fecha.strftime('%d/%m/%Y')
+    subtitulo3 ='\nFecha Media de siembra: ' + fms +\
+                '\nFecha Media de cosecha: ' + fmc
     fig.text(0.1, 0.95, titulo, fontsize=14, fontweight='bold')
     fig.text(0.1, 0.93, subtitulo, fontsize=13, va='top')
+    fig.text(0.1, 0.88, subtitulo2, fontsize=13, color='green', fontweight='bold', va='top')
+    fig.text(0.1, 0.85, subtitulo3, fontsize=13, va='top')
+
 
     # Logo CIMA
     newax = fig.add_axes([0.08, 0.11, 0.13, 0.13], anchor='NE', zorder=0)
