@@ -69,8 +69,8 @@ def PlotForecast(row):
     ax.plot(bh.dtimes, np.nanquantile(bh.ALMR, 0.5, axis=1), color='green',
             linewidth=2, zorder=3, label='Perspectiva Promedio')
     handles, labels = ax.get_legend_handles_labels()
-    handles = handles[0: 3] + handles[5:7]+ handles[3:5]
-    labels =  labels[0: 3] + labels[5:7]  + labels[3:5]
+    handles = handles[2: 4] + handles[0: 2]+ handles[4: 9]
+    labels =  labels[2: 4] + labels[0: 2]  + labels[4: 9]
     ax.legend(handles, labels, bbox_to_anchor=(0.6, 1.02, 1., .102), loc=3)
     plt.savefig(RUTA_FIGURAS + estacion + '_' + fecha + '_' + method + '.jpg', dpi=200, bbox_inches='tight')
     plt.close(fig)

@@ -90,15 +90,15 @@ def campaign_plot(bh):
     # Texto del Eje
     titulo = 'Perspectiva de la reserva de agua en el suelo'
     subtitulo = 'Estación: ' + estacion + ', ' + provincia +\
-                ' (' + tipo_est + ')' + '\nCultivo: ' + nombre_cultivo
-    subtitulo2 = '\nInicio Pronóstico: ' + fecha.strftime('%d/%m/%Y')
-    subtitulo3 ='\nFecha Media de siembra: ' + fms +\
+                ' (' + tipo_est + ')' + '\nCultivo: ' + nombre_cultivo +\
+                '\nFecha Media de siembra: ' + fms +\
                 '\nFecha Media de cosecha: ' + fmc
+
+    subtitulo2 = '\nInicio Pronóstico: ' + fecha.strftime('%d/%m/%Y')
+
     fig.text(0.1, 0.95, titulo, fontsize=14, fontweight='bold')
     fig.text(0.1, 0.93, subtitulo, fontsize=13, va='top')
-    fig.text(0.1, 0.88, subtitulo2, fontsize=13, color='green', fontweight='bold', va='top')
-    fig.text(0.1, 0.85, subtitulo3, fontsize=13, va='top')
-
+    fig.text(0.1, 0.82, subtitulo2, fontsize=13, color='green', fontweight='bold', va='top')
 
     # Logo CIMA
     newax = fig.add_axes([0.08, 0.11, 0.13, 0.13], anchor='NE', zorder=0)
