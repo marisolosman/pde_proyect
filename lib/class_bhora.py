@@ -129,17 +129,22 @@ class class_bhora:
         df1 = pd.read_excel(c1, sheet_name='Etapas')
         df2 = pd.read_excel(c1, sheet_name='PriodosCriticos')
         df3 = pd.read_excel(c1, sheet_name='ResumenPDE')
-        # Fecha Inicio: Siembra; Fecha Fin: Cosecha + 1 mes
+        # Fecha Inicio: Siembra; Fecha Fin: Cosecha
         cnd_i = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == 'Siembra')
         cnd_f = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == 'Cosecha')
         mesi = df3.loc[cnd_i, 'Mes'].values[0]
         diai = df3.loc[cnd_i, u'Día'].values[0]
-        self.fecha_inicio_plot = dt.datetime(self.yr_c, mesi, diai)
+        if self.clt[0] == 'S':
+            year_end = self.yr_c + 1
+        else:
+            year_end = self.yr_c
+        self.fecha_inicio_plot = dt.datetime(self.yr_c, mesi, diai) - relativedelta(months=1)
         self.fecha_media_siembra = dt.datetime(self.yr_c, mesi, diai)
         mesf = df3.loc[cnd_f, 'Mes'].values[0]
         diaf = df3.loc[cnd_f, u'Día'].values[0]
-        self.fecha_fin_plot = dt.datetime(self.yr_c+1, mesf, diaf) + relativedelta(months=1)
-        self.fecha_media_cosecha = dt.datetime(self.yr_c+1, mesf, diaf)
+
+        self.fecha_fin_plot = dt.datetime(year_end, mesf, diaf) + relativedelta(months=2)
+        self.fecha_media_cosecha = dt.datetime(year_end, mesf, diaf)
         # Periodo Critico Deficit
         # Inicio
         cnd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt)
@@ -149,7 +154,7 @@ class class_bhora:
         cnd_id = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == E_di)
         mes_id = df3.loc[cnd_id, 'Mes'].values[0]
         dia_id = df3.loc[cnd_id, u'Día'].values[0]
-        self.fecha_inicio_deficit = dt.datetime(self.yr_c+1, mes_id, dia_id) + dt.timedelta(days=di)
+        self.fecha_inicio_deficit = dt.datetime(year_end, mes_id, dia_id) + dt.timedelta(days=di)
         # Fin
         cnd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt)
         cultivo = df3.loc[cnd,'Ncultivo'].values[0]
@@ -158,7 +163,7 @@ class class_bhora:
         cnd_fd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == E_df)
         mes_fd = df3.loc[cnd_fd, 'Mes'].values[0]
         dia_fd = df3.loc[cnd_fd, u'Día'].values[0]
-        self.fecha_fin_deficit = dt.datetime(self.yr_c+1, mes_fd, dia_fd) + dt.timedelta(days=df)
+        self.fecha_fin_deficit = dt.datetime(year_end, mes_fd, dia_fd) + dt.timedelta(days=df)
         # Periodo Critico Excesos
         # Inicio
         cnd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt)
@@ -168,7 +173,7 @@ class class_bhora:
         cnd_id = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == E_di)
         mes_id = df3.loc[cnd_id, 'Mes'].values[0]
         dia_id = df3.loc[cnd_id, u'Día'].values[0]
-        self.fecha_inicio_excesos = dt.datetime(self.yr_c+1, mes_id, dia_id) + dt.timedelta(days=di)
+        self.fecha_inicio_excesos = dt.datetime(year_end, mes_id, dia_id) + dt.timedelta(days=di)
         # Fin
         cnd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt)
         cultivo = df3.loc[cnd,'Ncultivo'].values[0]
@@ -177,7 +182,7 @@ class class_bhora:
         cnd_fd = (df3.estacion == self.opera.estacion) & (df3.Cultivo == self.clt) & (df3.ETAPA == E_df)
         mes_fd = df3.loc[cnd_fd, 'Mes'].values[0]
         dia_fd = df3.loc[cnd_fd, u'Día'].values[0]
-        self.fecha_fin_excesos = dt.datetime(self.yr_c+1, mes_fd, dia_fd) + dt.timedelta(days=df)
+        self.fecha_fin_excesos = dt.datetime(year_end, mes_fd, dia_fd) + dt.timedelta(days=df)
 
     def calc_min_hist(self):
         c1 = self.c1

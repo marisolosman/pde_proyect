@@ -20,8 +20,8 @@ RUTA_FIGURAS = '/datos/osman/datos_pde_project/FIGURAS/'
 parser = argparse.ArgumentParser(description='Plot forecast bh for stations')
 
 # Required positional argument
-parser.add_argument('inicamp', type=int,
-                                        help='Year of begininning of campain')
+#parser.add_argument('inicamp', type=int,
+#                                        help='Year of begininning of campain')
 # Optional positional argument
 parser.add_argument('date', type=str, help='Date of IC in YYYYMMMDD')
 
@@ -34,24 +34,29 @@ parser.add_argument('--method', type=str,
 
 args = parser.parse_args()
 
-ini_camp = args.inicamp
 fecha = args.date
 
 if args.correccion:
     method = args.method
 else:
     method = 'SC'
-   
+fecha = dt.datetime.strptime(fecha, "%Y%m%d")
+  
 tipo_bh = 'profundo'
 df = pd.read_csv('../datos/estaciones.txt', sep=';')
+
 def PlotForecast(row):
     estacion = row['nom_est']
     cultivo = row['cultivo']
     exc_archivo = row['archivo_in']
     print(estacion, cultivo)
-    a = class_operativa(estacion, fecha, args.correccion, method)
+    a = class_operativa(estacion, fecha.strftime('%Y%m%d'), args.correccion, method)
     for i in range(0, 16, 4):
         a.etp[0, i:i + 4] = a.etp[0, i]
+    if cultivo[0] == 'S' and fecha.month <= 7:
+        ini_camp = fecha.year - 1
+    else:
+        ini_camp = fecha.year
     bh = class_bhora(a, cultivo, tipo_bh, ini_camp)
     bh.calc_min_hist()
     # FIGURA del Balance sin Correccion #######
@@ -72,7 +77,8 @@ def PlotForecast(row):
     handles = handles[2: 4] + handles[0: 2]+ handles[4: 9]
     labels =  labels[2: 4] + labels[0: 2]  + labels[4: 9]
     ax.legend(handles, labels, bbox_to_anchor=(0.6, 1.02, 1., .102), loc=3)
-    plt.savefig(RUTA_FIGURAS + estacion + '_' + fecha + '_' + method + '.jpg', dpi=200, bbox_inches='tight')
+    plt.savefig(RUTA_FIGURAS + estacion + '_' + cultivo + '_' +\
+                fecha.strftime('%Y%m%d') + '_' + method + '.jpg', dpi=200, bbox_inches='tight')
     plt.close(fig)
 
     # FIGURA del Balance climatico #######
@@ -87,12 +93,15 @@ def PlotForecast(row):
     ax.plot(x, ys, color='#ff6600', zorder=3, label='Escenario seco')
     ax.plot(x, yn, color='#008000',zorder=3, label='Escenario normal')
     ax.plot(x, yh, color='#0000ff', zorder=3, label=u'Escenario húmedo')
-    plt.legend(bbox_to_anchor=(0.6, 1.02, 1., .102), loc=3)
-    plt.savefig(RUTA_FIGURAS + estacion + '_' + fecha + '_bhclim.jpg', dpi=200, bbox_inches='tight')
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, bbox_to_anchor=(0.6, 1.02, 1., .102), loc=3)
+    plt.savefig(RUTA_FIGURAS + estacion + '_' + cultivo + '_' +\
+                fecha.strftime('%Y%m%d') + '_bhclim.jpg', dpi=200, bbox_inches='tight')
     plt.close(fig)
 
 pool = mp.Pool(CORES)
-rows = [row for index, row in df.loc[0: 9].iterrows()]
+rows = [row for index, row in df.loc[0: 20].iterrows()]
 results = [pool.map(PlotForecast, rows)]
+#PlotForecast(df.loc[1])
 pool.close()
 
