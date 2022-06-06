@@ -1,6 +1,10 @@
 # pde project
 Funciones elaboradas para trabajar en el marco del proyecto PDE UBA-ORA: "Aplicación de pronósticos climáticos al manejo del riesgo agropecuario"
-(Pendiente completar la descripción de cada carpeta)
+
+
+## Pendientes
+- Eliminar códigos obsoletos y duplicados
+- Añadir descripción del contenido de cada carpeta
 
 ### Pasos para incorporar una nueva estación
 - Extraer los pronósticos restrospectivos de las variables necesarias para la estación

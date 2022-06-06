@@ -63,7 +63,8 @@ class class_bhora:
 
     def get_cultivo_data(self):
         df = pd.read_csv('../datos/estaciones.txt', sep=';')
-        nombre_cultivo = df.loc[df['nom_est'] == self.opera.estacion,'nombre_cultivo'].values[0]
+        i1 =  (df['nom_est'] == self.opera.estacion) & (df['cultivo'] == self.clt)
+        nombre_cultivo = df.loc[i1, 'nombre_cultivo'].values[0]
         ds = read_soil_parameter(self.id_ora, self.clt, self.t_bh)
         self.clt_data = ds
         self.nombre_cultivo = nombre_cultivo
