@@ -39,14 +39,15 @@ var_name = ['velviento', 'tmin', 'tmax', 'hrmean', 'dswrf', 'prate']
 # Lat-Lon Resistencia: -27.45/-59.05 (SMN)
 # Lat-Lon Junin: -34.55/-60.92 (SMN)
 #lat_e = [-34.55, -27.45, -31.3, -33.11667, -35.966667, -33.666667,
-#         -31.783333, -29.9, -29.8833]
-lat_e = [-37.2333, -38.333333]
-lon_e = [-59.25, -60.25]
-n_est = ['tandil', 'tres_arroyos']
+#         -31.783333, -29.9, -29.8833, -37.2333, -38.333333]
+lat_e = [-35.7]
+lon_e = [-63.75]
+n_est = ['gral_pico']
 #lon_e = [-60.92,  -59.05, -58.016667, -64.233333, -62.73333, -61.966667,
-#         -60.483333, -63.683333, -61.95]
+#         -60.483333, -63.683333, -61.95, -59.25, -60.25]
 #n_est = ['junin', 'resistencia', 'concordia', 'rio_cuarto',
-#         'trenque_lauquen', 'venado_tuerto', 'parana', 'vmrs', 'ceres']
+#         'trenque_lauquen', 'venado_tuerto', 'parana', 'vmrs', 'ceres',
+#        'tandil', 'tres_arroyos']
 folder = '/datos/osman/datos_pde_project/'
 
 # Abrimos una carpeta y guardamos los archivos ahi
