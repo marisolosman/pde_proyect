@@ -86,7 +86,9 @@ class class_bhora:
         c1 = self.c1
         # Cultivos BH
         df = pd.read_csv('../datos/estaciones.txt', sep=';')
-        infile = df.loc[df['nom_est'] == self.opera.estacion,'archivo_in'].values[0]
+        infile = df.loc[np.logical_and(df['nom_est'] == self.opera.estacion,
+                                       df['cultivo'] == self.clt),
+                        'archivo_in'].values[0]
         self.balance_real = c1 + infile
         df = pd.read_excel(c1 + infile, sheet_name='DatosDiarios')
         self.almr_obs = df['alm real'].values
