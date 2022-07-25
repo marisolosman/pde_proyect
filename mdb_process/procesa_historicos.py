@@ -68,7 +68,7 @@ for nomvar, unid in zip(variables, unidades) :
     print('Generando Archivo: ' + namefile)
     f = nc.Dataset(namefile, 'w', format='NETCDF4')
     f.createDimension('time', None)
-    df = pd.read_csv('../datos/estaciones.txt', sep=';')
+    df = pd.read_csv('../datos/estaciones_hist.txt', sep=';')
     for row in df.itertuples():
         print(row.nom_est)
         dfm = read_data_hist_mdb(nomvar, row.tipo_est, row.id_est)
@@ -97,7 +97,7 @@ unid = 'mm'
 
 print('###########',nomvar,'###########')
 
-df = pd.read_csv('../datos/estaciones.txt', sep=';')
+df = pd.read_csv('../datos/estaciones_hist.txt', sep=';')
 archivos = df.archivo_in.to_list()
 estaciones = df.nom_est.to_list()
 ides = df.id_est.to_list()
