@@ -101,11 +101,9 @@ def PlotForecast(row):
 
 pool = mp.Pool(CORES)
 rows = [row for index, row in df.loc[0: 22].iterrows()]
-
-rows = [i for i in rows if ((i['cultivo'][0] == 'S' and (fecha.month < 6 | fecha.month >=10)) |
+rows = [i for i in rows if ((i['cultivo'][0] == 'S' and (fecha.month < 6 or fecha.month >=10)) |
         (i['cultivo'][0] == 'T' and fecha.month >= 5)) ]
 
 results = [pool.map(PlotForecast, rows)]
-#PlotForecast(df.loc[1])
 pool.close()
 
