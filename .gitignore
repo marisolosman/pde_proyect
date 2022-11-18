@@ -84,4 +84,9 @@ run_test_bash.sh
 #ignore netcdf
 *.nc
 *.zip
-**/datos/
+datos/datos_hist/modelo/*
+datos/datos_hist/obs/*
+datos/bhora_esce/*
+datos/bhora_init/*
+datos/datos_op/*
+datos/figuras/*
