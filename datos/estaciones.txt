@@ -18,3 +18,7 @@ tres_arroyos;108;SMN;S1-III;Soja de Primera (Grupo de Madurez III);balance_TARR_
 tres_arroyos;108;SMN;TL;Trigo (Siembra temprana);balance_TARR_LAPRIDA_TL_BALC_montecarlo.xls
 trenque_lauquen;54;SMN;S1-IV;Soja de Primera (Grupo de Madurez V);balance_TLAU_FA100-35_S1-IV_TLAU_montecarlo.xls
 trenque_lauquen;54;SMN;TL;Trigo (Siembra temprana);balance_TLAU_FA100-35_TL_TLAU_montecarlo.xls
+vmrs;24;SMN;S1-V;Soja de Primera (Grupo de Madurez V);balance_VMRS_FL100-50_S1-V_VMAR_montecarlo.xls
+vmrs;24;SMN;TS(TL);Trigo (Siembra temprana);balance_VMRS_FL100-50_TS(TL)_VMAR_montecarlo.xls
+venado_tuerto;119;SMN;S1-V;Soja de Primera (Grupo de Madurez V);balance_VTUER_ROJAS_S1-V_PERG_montecarlo.xls
+venado_tuerto;119;SMN;TL;Trigo (Siembra temprana);balance_VTUER_ROJAS_TL_PERG_montecarlo.xls

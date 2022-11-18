@@ -2,6 +2,7 @@ import glob
 import pandas as pd
 import numpy as np
 import datetime as dt
+import calendar
 from dateutil.relativedelta import relativedelta
 from funciones_bhora import get_KC
 from funciones_correccion import qq_correction
@@ -190,25 +191,35 @@ class class_bhora:
     def calc_min_hist(self):
         c1 = self.c1
         df = pd.read_csv('../datos/estaciones.txt', sep=';')
-        infile = df.loc[df['nom_est'] == self.opera.estacion,'archivo_in'].values[0]
-        df = pd.read_excel(c1 + infile, sheet_name='DatosDiarios')
-        df = df.assign(juliano=df['Fecha'].dt.dayofyear)
-        minimos = df.groupby('juliano').min()
-        almr_min = minimos['alm real'].to_numpy()
-        jul_min = np.arange(1,367)
-        yri = self.fecha_inicio_plot.year
-        jui = self.fecha_inicio_plot.timetuple().tm_yday
-        yrf = self.fecha_fin_plot.year
-        juf = self.fecha_fin_plot.timetuple().tm_yday
-        feh = pd.date_range(self.fecha_inicio_plot, self.fecha_fin_plot)
-        if jui > juf:# e.g 340 y 120 (campaña 2002-2003)
-            ju1 = dt.datetime(yri,12,31).timetuple().tm_yday
-            alm1 = almr_min[jui-1:ju1]
-            alm2 = almr_min[0:juf]
-            al_min = np.hstack([alm1,alm2])
-        if jui < juf:
-            alm1 = almr_min[jui-1:juf]
-            al_min = alm1
+        cnd = (df.nom_est == self.opera.estacion) & (df.cultivo == self.clt)
+        infile = df.loc[cnd,'archivo_in'].values[0]
+        df = pd.read_excel(c1 + infile, sheet_name='DatosDiarios', index_col='Fecha')
+        fd = dt.datetime.strptime(self.fecha, '%Y%m%d') - dt.timedelta(days=1)
+        df0 = df.loc['1970-01-01':fd.strftime('%Y-%m-%d'),]
+        minimos = df0.groupby([df0.index.month, df0.index.day]).min()
+        valores = minimos['alm real'].to_numpy()
+        # Bisiesto
+        mbis = np.zeros(366+8)
+        mbis[0:4] = valores[-4:]
+        mbis[4:-4] = valores
+        mbis[-4:] = valores[0:4]
+        v1 = pd.Series(data=mbis, index=np.arange(0,len(mbis)))
+        min_bis = v1.rolling(8, center=True, min_periods=4).mean().to_numpy()[4:-4]
+        # No Bisiesto
+        mnbis = np.zeros(365+8)
+        mnbis[0:4] = valores[-4:]
+        mnbis[4:-4] = np.concatenate((valores[0:59], valores[60:]), axis=0)
+        mnbis[-4:] = valores[0:4]
+        v1 = pd.Series(data=mnbis, index=np.arange(0,len(mnbis)))
+        min_nbis = v1.rolling(8, center=True, min_periods=4).mean().to_numpy()[4:-4]
+        #
+        feh = pd.date_range(start=dt.datetime(self.yr_c, 1, 1), end=dt.datetime(self.yr_c+1, 12, 31))
+        if (calendar.isleap(self.yr_c)) & (~calendar.isleap(self.yr_c+1)):
+            al_min = np.concatenate((min_bis, min_nbis), axis=0)
+        elif (~calendar.isleap(self.yr_c)) & (calendar.isleap(self.yr_c+1)):
+            al_min = np.concatenate((min_nbis, min_bis), axis=0)
+        elif (~calendar.isleap(self.yr_c)) & (~calendar.isleap(self.yr_c+1)):
+            al_min = np.concatenate((min_nbis, min_nbis), axis=0)
 
         return al_min, feh
 

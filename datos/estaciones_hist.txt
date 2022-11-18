@@ -1,7 +1,6 @@
 nom_est;id_est;tipo_est;cultivo;nombre_cultivo;archivo_in
 ceres;23;SMN;S1-V;Soja de Primera (Grupo de Madurez V);balance_CER_CERES_S1-V_RAFA_montecarlo.xls
 concordia;105;SMN;S1-V;Soja de Primera (Grupo de Madurez V);balance_CONC_YERUA_S1-V_PARA_montecarlo.xls
-gral_pico;88;SMN;S1-IV;Soja de Primera (Grupo de Madurez IV);balance_GPICO_FA100-35_S1-IV_TLAU_montecarlo.xls
 junin;100;SMN;S1-V;Soja de Primera (Grupo de Madurez V);balance_JUN_ROJAS_S1-V_PERG_montecarlo.xls
 parana;32;SMN;S1-V;Soja de Primera (Grupo de Madurez V);balance_PARA_LOS CAPONES_S1-V_PARA_montecarlo.xls
 resistencia;107;SMN;S1-VII;Soja de Primera (Grupo de Madurez VII);balance_RESIS_FL40-45_S1-VII_NORTE_montecarlo.xls
@@ -9,3 +8,5 @@ rio_cuarto;39;SMN;S1-V;Soja de Primera (Grupo de Madurez V);balance_RCTO_FL100-3
 tandil;83;SMN;S1-III;Soja de Primera (Grupo de Madurez III);balance_TAND_TANDIL_S1-III_BALC_montecarlo.xls
 tres_arroyos;108;SMN;S1-III;Soja de Primera (Grupo de Madurez III);balance_TARR_LAPRIDA_S1-III_BALC_montecarlo.xls
 trenque_lauquen;54;SMN;S1-IV;Soja de Primera (Grupo de Madurez V);balance_TLAU_FA100-35_S1-IV_TLAU_montecarlo.xls
+vmrs;24;SMN;S1-V;Soja de Primera (Grupo de Madurez V);balance_VMRS_FL100-50_S1-V_VMAR_montecarlo.xls
+venado_tuerto;119;SMN;S1-V;Soja de Primera (Grupo de Madurez V);balance_VTUER_ROJAS_S1-V_PERG_montecarlo.xls
